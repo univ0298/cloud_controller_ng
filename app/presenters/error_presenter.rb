@@ -20,8 +20,8 @@ class ErrorPresenter
   end
 
   def to_hash
-    if @test_mode
-      raise @error if !api_error? && errors_to_raise.include?(@error.class)
+    if test_mode
+      raise @error if response_code == 500
 
       @error_hasher.unsanitized_hash
     else
@@ -33,8 +33,7 @@ class ErrorPresenter
     @error_hasher.api_error?
   end
 
-  def errors_to_raise
-    require 'webmock'
-    [WebMock::NetConnectNotAllowedError]
-  end
+  private
+
+  attr_reader :test_mode
 end
