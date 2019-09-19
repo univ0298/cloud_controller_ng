@@ -41,8 +41,18 @@ module VCAP::CloudController
 
     many_to_many :audited_spaces,
       class: 'VCAP::CloudController::Space',
-      join_table: 'spaces_auditors',
-      right_key: :space_id, reciprocal: :auditors
+      join_table: 'roles',
+      right_key: :space_id,
+      reciprocal: :auditors,
+      condition: { type: 'space_auditor', user: self }
+      # right_key: :space_id, reciprocal: :auditors,
+      # dataset:       proc { |r|
+      #   audited_space_ids = Role.where(type: 'space_auditor', user: self).select(:space_id)
+      #   Space.where(id: audited_space_ids)
+      # }
+    # condition: { type: 'space_auditor', user: self }
+
+    many_to_many :roles
 
     one_to_many :labels, class: 'VCAP::CloudController::UserLabelModel', key: :resource_guid, primary_key: :guid
     one_to_many :annotations, class: 'VCAP::CloudController::UserAnnotationModel', key: :resource_guid, primary_key: :guid
@@ -117,10 +127,14 @@ module VCAP::CloudController
       remove_audited_space space
     end
 
+    def add_audited_space(space)
+      Role.create(type: 'space_auditor', user: self, space: space)
+    end
+
     def membership_spaces
       Space.join(:spaces_developers, space_id: :id, user_id: id).select(:spaces__id).
         union(
-          Space.join(:spaces_auditors, space_id: :id, user_id: id).select(:spaces__id)
+          Role.where(type: 'space_auditor', user: self).select(:space_id)
         ).
         union(
           Space.join(:spaces_managers, space_id: :id, user_id: id).select(:spaces__id)

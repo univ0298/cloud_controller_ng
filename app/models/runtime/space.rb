@@ -27,7 +27,12 @@ module VCAP::CloudController
 
     define_user_group :developers, reciprocal: :spaces, before_add: :validate_developer
     define_user_group :managers, reciprocal: :managed_spaces, before_add: :validate_manager
-    define_user_group :auditors, reciprocal: :audited_spaces, before_add: :validate_auditor
+    define_user_group_with_roles :auditors,
+      reciprocal: :audited_spaces,
+      before_add: :validate_auditor,
+      condition: { type: 'space_auditor', space: self }
+
+    one_to_many :roles, before_add: :validate_role
 
     many_to_one :organization, before_set: :validate_change_organization
 
@@ -205,6 +210,13 @@ module VCAP::CloudController
       raise InvalidAuditorRelation.new(user.guid) unless in_organization?(user)
     end
 
+    def validate_role(role)
+      case role.type
+      when 'space_auditor'
+        validate_auditor(role.user)
+      end
+    end
+
     def validate_change_organization(new_org)
       raise CloudController::Errors::ApiError.new_from_details('OrganizationAlreadySet') unless organization.nil? || organization.guid == new_org.guid
     end
@@ -220,7 +232,10 @@ module VCAP::CloudController
       {
         spaces__id: dataset.join_table(:inner, :spaces_developers, space_id: :id, user_id: user.id).select(:spaces__id).
           union(dataset.join_table(:inner, :spaces_managers, space_id: :id, user_id: user.id).select(:spaces__id)).
-          union(dataset.join_table(:inner, :spaces_auditors, space_id: :id, user_id: user.id).select(:spaces__id)).
+          union(
+            Role.where(type: 'space_auditor', user: user).select(:space_id)
+            # dataset.join_table(:inner, :spaces_auditors, space_id: :id, user_id: user.id).select(:spaces__id)
+          ).
           union(dataset.join_table(:inner, :organizations_managers, organization_id: :organization_id, user_id: user.id).select(:spaces__id)).
           select(:id)
       }
@@ -254,6 +269,11 @@ module VCAP::CloudController
 
     def in_suspended_org?
       organization.suspended?
+    end
+
+    def add_auditor(user)
+      auditor_role = Role.create(type: 'space_auditor', user: user, space: self)
+      self.add_role(auditor_role)
     end
 
     private

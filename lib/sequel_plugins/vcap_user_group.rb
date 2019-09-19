@@ -10,5 +10,16 @@ module Sequel::Plugins::VcapUserGroup
       many_to_many(name, opts)
       add_association_dependencies name => :nullify
     end
+
+    def define_user_group_with_roles(name, opts={})
+      opts = opts.merge(
+        class: 'VCAP::CloudController::User',
+        join_table: 'roles',
+        right_key: :user_id
+      )
+
+      many_to_many(name, opts)
+      add_association_dependencies name => :nullify
+    end
   end
 end
