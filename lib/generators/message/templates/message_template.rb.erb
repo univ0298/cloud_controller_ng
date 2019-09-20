@@ -1,0 +1,6 @@
+module VCAP::CloudController
+  class <%= class_name.camelcase %>Message < BaseMessage
+    register_allowed_keys []
+    validates_with NoAdditionalKeysValidator
+  end
+end
