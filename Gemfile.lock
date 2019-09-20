@@ -1,4 +1,13 @@
 GIT
+  remote: https://github.com/cloudfoundry/copilot
+  revision: 7c80eb2c34e6763b7e6e3aa22aedc776c8feedbf
+  branch: eirini-istio-bridge-168270861
+  glob: sdk/ruby/*.gemspec
+  specs:
+    cf-copilot (0.0.14)
+      grpc (~> 1.0)
+
+GIT
   remote: https://github.com/cloudfoundry/vcap-concurrency.git
   revision: 2a5b0179642cb3d3e7f912a6453ec5731979d115
   ref: 2a5b0179
@@ -96,8 +105,6 @@ GEM
       steno
     builder (3.2.3)
     byebug (10.0.2)
-    cf-copilot (0.0.14)
-      grpc (~> 1.0)
     cf-perm (0.0.10)
       grpc (~> 1.0)
     cf-perm-test-helpers (0.0.6)
@@ -467,7 +474,7 @@ DEPENDENCIES
   azure-storage (= 0.14.0.preview)
   bits_service_client (~> 3.0)
   byebug
-  cf-copilot (= 0.0.14)
+  cf-copilot!
   cf-perm (~> 0.0.10)
   cf-perm-test-helpers (~> 0.0.6)
   cf-uaa-lib (~> 3.14.0)

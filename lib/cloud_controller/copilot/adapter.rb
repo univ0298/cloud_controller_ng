@@ -16,8 +16,8 @@ module VCAP::CloudController
               internal: route.internal?,
               vip: route.vip
             )
+            logger.debug("Upsert route with GUID: #{route.guid} and vip: #{route.vip}")
           end
-          logger.debug("Upsert route with GUID: #{route.guid} and vip: #{route.vip}")
         end
 
         def map_route(route_mapping)
@@ -77,10 +77,6 @@ module VCAP::CloudController
 
         def with_guardrails(route: nil)
           return unless Config.config.get(:copilot, :enabled)
-
-          if route
-            return unless Config.config.get(:copilot, :temporary_istio_domains).include?(route.domain.name)
-          end
 
           yield
         rescue StandardError => e
