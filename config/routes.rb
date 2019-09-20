@@ -140,6 +140,9 @@ Rails.application.routes.draw do
   # resource_matches
   post '/resource_matches', to: 'resource_matches#create'
 
+  # roles
+  get '/roles', to: 'roles#index'
+
   # routes
   get '/routes', to: 'routes#index'
   get '/routes/:guid', to: 'routes#show'
