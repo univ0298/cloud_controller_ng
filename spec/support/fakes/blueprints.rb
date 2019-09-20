@@ -409,6 +409,7 @@ module VCAP::CloudController
   end
 
   Event.blueprint do
+    guid        { Sham.guid }
     timestamp  { Time.now.utc }
     type       { Sham.name }
     actor      { Sham.guid }
@@ -418,6 +419,8 @@ module VCAP::CloudController
     actee_type { Sham.name }
     actee_name { Sham.name }
     space      { Space.make }
+    organization_guid { Organization.make }
+    metadata { {} }
   end
 
   AppEvent.blueprint do

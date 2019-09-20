@@ -25,6 +25,22 @@ module VCAP::CloudController
       super || {}
     end
 
+    def data
+      metadata
+    end
+
+    def target
+      actee
+    end
+
+    def target_name
+      actee_name
+    end
+
+    def target_type
+      actee_type
+    end
+
     def before_save
       denormalize_space_and_org_guids
       super
