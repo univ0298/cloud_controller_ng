@@ -155,6 +155,26 @@ class VCAP::CloudController::Permissions::Queryer
     end
   end
 
+  def can_audit_space?(space_guid, org_guid)
+    science 'can_audit_space' do |e|
+      e.use { db_permissions.can_audit_space?(space_guid, org_guid) }
+      e.try { perm_permissions.can_audit_space?(space_guid, org_guid) }
+
+      # We only need to run this experiment when the role is something other than global
+      e.run_if { !db_permissions.can_read_globally? }
+    end
+  end
+
+  def can_audit_org?(org_guid)
+    science 'can_audit_space' do |e|
+      e.use { db_permissions.can_audit_org?(org_guid) }
+      e.try { perm_permissions.can_audit_org?(org_guid) }
+
+      # We only need to run this experiment when the role is something other than global
+      e.run_if { !db_permissions.can_read_globally? }
+    end
+  end
+
   def can_read_from_isolation_segment?(isolation_segment)
     science 'can_read_from_isolation_segment' do |e|
       e.context(isolation_segment_guid: isolation_segment.guid)

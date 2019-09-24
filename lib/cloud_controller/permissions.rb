@@ -10,6 +10,10 @@ class VCAP::CloudController::Permissions
     VCAP::CloudController::Membership::ORG_MANAGER,
   ].freeze
 
+  ROLES_FOR_ORG_AUDITING ||= [
+    VCAP::CloudController::Membership::ORG_AUDITOR
+  ].freeze
+
   ROLES_FOR_SPACE_READING ||= [
     VCAP::CloudController::Membership::SPACE_DEVELOPER,
     VCAP::CloudController::Membership::SPACE_MANAGER,
@@ -39,6 +43,12 @@ class VCAP::CloudController::Permissions
   ROLES_FOR_SPACE_UPDATING ||= [
     VCAP::CloudController::Membership::SPACE_MANAGER,
     VCAP::CloudController::Membership::ORG_MANAGER,
+  ].freeze
+
+  ROLES_FOR_SPACE_AUDITING ||= [
+    VCAP::CloudController::Membership::SPACE_AUDITOR,
+    VCAP::CloudController::Membership::SPACE_DEVELOPER,
+    VCAP::CloudController::Membership::ORG_AUDITOR
   ].freeze
 
   ROLES_FOR_ROUTE_WRITING ||= [
@@ -131,6 +141,15 @@ class VCAP::CloudController::Permissions
       isolation_segment.spaces.any? { |space| can_read_from_space?(space.guid, space.organization.guid) } ||
       isolation_segment.organizations.any? { |org| can_read_from_org?(org.guid) }
   end
+
+  def can_audit_space?(space_guid, org_guid)
+    can_read_globally? || membership.has_any_roles?(ROLES_FOR_SPACE_AUDITING, space_guid, org_guid)
+  end
+
+  def can_audit_org?(org_guid)
+    can_read_globally? || membership.has_any_roles?(ROLES_FOR_ORG_AUDITING, nil, org_guid)
+  end
+
 
   def readable_route_guids
     VCAP::CloudController::Route.user_visible(@user, can_read_globally?).map(&:guid)

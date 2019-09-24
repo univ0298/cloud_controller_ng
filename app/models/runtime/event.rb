@@ -21,24 +21,13 @@ module VCAP::CloudController
       :actee_type, :actee_name, :timestamp, :metadata, :space_guid,
       :organization_guid
 
+    alias_method :data, :metadata
+    alias_method :target, :actee
+    alias_method :target_name, :actee_name
+    alias_method :target_type, :actee_type
+
     def metadata
       super || {}
-    end
-
-    def data
-      metadata
-    end
-
-    def target
-      actee
-    end
-
-    def target_name
-      actee_name
-    end
-
-    def target_type
-      actee_type
     end
 
     def before_save
