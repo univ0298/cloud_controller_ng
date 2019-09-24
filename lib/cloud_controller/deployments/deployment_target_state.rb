@@ -38,9 +38,17 @@ module VCAP::CloudController
           raise DeploymentCreate::Error.new(e.message)
         end
 
+        apply_sidecars(app, rollback_target_revision.sidecars) if rollback_target_revision
+
         app.update(environment_variables: environment_variables)
         app.save
       end
+    end
+
+    def apply_sidecars(app, revision_sidecars)
+      app.sidecars.map(&:destroy)
+      app.reload # this is p brutal
+      revision_sidecars.map(&:hydrate)
     end
 
     class RevisionDropletSource < Struct.new(:revision)

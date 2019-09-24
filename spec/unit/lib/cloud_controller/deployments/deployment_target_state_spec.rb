@@ -4,16 +4,16 @@ require 'cloud_controller/deployments/deployment_target_state'
 module VCAP::CloudController
   RSpec.describe DeploymentTargetState do
     subject(:target_state) { DeploymentTargetState.new(app, message) }
-    let(:app) { AppModel.make(environment_variables: { 'foo' => 'bar' }) }
-    let(:droplet) { DropletModel.make(app: app, process_types: { 'web' => 'command' }) }
+    let(:app) { AppModel.make(environment_variables: {'foo' => 'bar'}) }
+    let(:droplet) { DropletModel.make(app: app, process_types: {'web' => 'command'}) }
 
     describe 'droplet' do
       context 'revision provided' do
         let(:revision) { RevisionModel.make(droplet: droplet) }
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            revision: { guid: revision.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            revision: {guid: revision.guid},
           })
         }
 
@@ -63,8 +63,8 @@ module VCAP::CloudController
       context 'droplet provided' do
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            droplet: { guid: droplet.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            droplet: {guid: droplet.guid},
           })
         }
 
@@ -76,7 +76,7 @@ module VCAP::CloudController
       context 'neither droplet or revision provided' do
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
+            relationships: {app: {data: {guid: app.guid}}},
           })
         }
 
@@ -107,12 +107,12 @@ module VCAP::CloudController
     describe 'environment_variables' do
       context 'a revision is provided' do
         let(:revision) do
-          RevisionModel.make(droplet: droplet, environment_variables: { 'baz' => 'qux' })
+          RevisionModel.make(droplet: droplet, environment_variables: {'baz' => 'qux'})
         end
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            revision: { guid: revision.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            revision: {guid: revision.guid},
           })
         }
 
@@ -124,8 +124,8 @@ module VCAP::CloudController
       context 'a revision is NOT provided' do
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            droplet: { guid: droplet.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            droplet: {guid: droplet.guid},
           })
         }
 
@@ -140,8 +140,8 @@ module VCAP::CloudController
         let(:revision) { RevisionModel.make(droplet: droplet) }
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            revision: { guid: revision.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            revision: {guid: revision.guid},
           })
         }
 
@@ -153,8 +153,8 @@ module VCAP::CloudController
       context 'a revision is not provided' do
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            droplet: { guid: droplet.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            droplet: {guid: droplet.guid},
           })
         }
 
@@ -168,8 +168,8 @@ module VCAP::CloudController
       let(:user_audit_info) { UserAuditInfo.new(user_guid: '123', user_email: 'connor@example.com', user_name: 'braa') }
       let(:message) {
         DeploymentCreateMessage.new({
-          relationships: { app: { data: { guid: app.guid } } },
-          droplet: { guid: droplet.guid },
+          relationships: {app: {data: {guid: app.guid}}},
+          droplet: {guid: droplet.guid},
         })
       }
 
@@ -185,8 +185,8 @@ module VCAP::CloudController
         before do
           allow_any_instance_of(AppAssignDroplet).
             to receive(:assign).
-            with(app, droplet).
-            and_raise(AppAssignDroplet::Error.new('foo'))
+              with(app, droplet).
+              and_raise(AppAssignDroplet::Error.new('foo'))
         end
 
         it 'raises an error' do
@@ -196,21 +196,36 @@ module VCAP::CloudController
         end
       end
 
-      context 'assigning environment variables' do
-        let(:revision) do
-          RevisionModel.make(droplet: droplet, environment_variables: { 'baz' => 'qux' })
-        end
+      context 'when rolling back to a revision' do
         let(:message) {
           DeploymentCreateMessage.new({
-            relationships: { app: { data: { guid: app.guid } } },
-            revision: { guid: revision.guid },
+            relationships: {app: {data: {guid: app.guid}}},
+            revision: {guid: revision.guid},
           })
         }
 
-        it 'assigns environment variables to the app' do
-          subject.apply_to_app(app, user_audit_info)
+        context 'assigning environment variables' do
+          let(:revision) do
+            RevisionModel.make(droplet: droplet, environment_variables: {'baz' => 'qux'})
+          end
 
-          expect(app.environment_variables).to eq(revision.environment_variables)
+          it 'assigns environment variables to the app' do
+            subject.apply_to_app(app, user_audit_info)
+
+            expect(app.environment_variables).to eq(revision.environment_variables)
+          end
+        end
+
+        context 'assigning sidecars to the app' do
+          let(:revision) { RevisionModel.make(droplet: droplet, app: app) }
+          let!(:revision_sidecar) { RevisionSidecarModel.make(revision: revision, name: 'sidecar-name', command: 'sidecar-command') }
+
+          it 'assigns the sidecar to the app' do
+            subject.apply_to_app(app, user_audit_info)
+
+            expect(app.sidecars.first.name).to eq('sidecar-name')
+            expect(app.sidecars.first.command).to eq('sidecar-command')
+          end
         end
       end
     end

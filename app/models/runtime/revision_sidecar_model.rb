@@ -3,7 +3,7 @@ module VCAP::CloudController
     include SidecarMixin
 
     many_to_one :revision,
-      class: 'VCAP::CloudController::RevisionSidecarModel',
+      class: 'VCAP::CloudController::RevisionModel',
       key: :revision_guid,
       primary_key: :guid,
       without_guid_generation: true
@@ -16,6 +16,23 @@ module VCAP::CloudController
     alias_method :sidecar_process_types, :revision_sidecar_process_types
 
     add_association_dependencies revision_sidecar_process_types: :destroy
+
+    def hydrate
+      sidecar = SidecarModel.create(
+        app_guid: revision.app.guid,
+        name: name,
+        command: command,
+        memory: memory,
+      )
+
+      revision_sidecar_process_types.each do |revision_sidecar_process_type|
+        SidecarProcessTypeModel.create(
+          type: revision_sidecar_process_type.type,
+          sidecar_guid: sidecar.guid,
+          app_guid: sidecar.app_guid,
+        )
+      end
+    end
 
     def validate
       super
