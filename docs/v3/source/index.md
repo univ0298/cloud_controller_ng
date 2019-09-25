@@ -5,6 +5,7 @@ includes:
   - api_resources/app_features
   - api_resources/app_ssh_enabled
   - api_resources/apps
+  - api_resources/audit_events
   - api_resources/builds
   - api_resources/buildpacks
   - api_resources/deployments
@@ -217,6 +218,7 @@ includes:
   - experimental_resources/deployments/list
   - experimental_resources/deployments/update
   - experimental_resources/deployments/cancel
+  - experimental_resources/audit_events/list
   - experimental_resources/resource_matches/header
   - experimental_resources/resource_matches/object
   - experimental_resources/resource_matches/create
