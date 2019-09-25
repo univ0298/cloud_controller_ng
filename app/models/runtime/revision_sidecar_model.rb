@@ -17,23 +17,6 @@ module VCAP::CloudController
 
     add_association_dependencies revision_sidecar_process_types: :destroy
 
-    def hydrate
-      sidecar = SidecarModel.create(
-        app_guid: revision.app.guid,
-        name: name,
-        command: command,
-        memory: memory,
-      )
-
-      revision_sidecar_process_types.each do |revision_sidecar_process_type|
-        SidecarProcessTypeModel.create(
-          type: revision_sidecar_process_type.type,
-          sidecar_guid: sidecar.guid,
-          app_guid: sidecar.app_guid,
-        )
-      end
-    end
-
     def validate
       super
       validates_presence [:name, :command]

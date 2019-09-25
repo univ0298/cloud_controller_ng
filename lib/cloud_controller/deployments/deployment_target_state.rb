@@ -45,10 +45,29 @@ module VCAP::CloudController
       end
     end
 
+    private
+
     def apply_sidecars(app, revision_sidecars)
-      app.sidecars.map(&:destroy)
-      app.reload # this is p brutal
-      revision_sidecars.map(&:hydrate)
+      SidecarDelete.delete(app.sidecars)
+      revision_sidecars.each { |rs| rehydrate(rs) }
+    end
+
+    # if this needs to be called from somewhere else, we should move it to the revision sidecar model
+    def rehydrate(revision_sidecar)
+      sidecar = SidecarModel.create(
+        app_guid: revision_sidecar.revision.app.guid,
+        name: revision_sidecar.name,
+        command: revision_sidecar.command,
+        memory: revision_sidecar.memory,
+      )
+
+      revision_sidecar.revision_sidecar_process_types.each do |revision_sidecar_process_type|
+        SidecarProcessTypeModel.create(
+          type: revision_sidecar_process_type.type,
+          sidecar_guid: sidecar.guid,
+          app_guid: sidecar.app_guid,
+        )
+      end
     end
 
     class RevisionDropletSource < Struct.new(:revision)

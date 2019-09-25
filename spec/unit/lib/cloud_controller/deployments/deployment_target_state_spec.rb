@@ -203,10 +203,11 @@ module VCAP::CloudController
             revision: {guid: revision.guid},
           })
         }
+        let(:revision) { RevisionModel.make(droplet: droplet, app: app) }
 
         context 'assigning environment variables' do
           let(:revision) do
-            RevisionModel.make(droplet: droplet, environment_variables: {'baz' => 'qux'})
+            RevisionModel.make(droplet: droplet, app: app, environment_variables: {'baz' => 'qux'})
           end
 
           it 'assigns environment variables to the app' do
@@ -217,14 +218,34 @@ module VCAP::CloudController
         end
 
         context 'assigning sidecars to the app' do
-          let(:revision) { RevisionModel.make(droplet: droplet, app: app) }
-          let!(:revision_sidecar) { RevisionSidecarModel.make(revision: revision, name: 'sidecar-name', command: 'sidecar-command') }
+          let!(:revision_sidecar) do
+            RevisionSidecarModel.make(
+              revision: revision,
+              name: 'sidecar-name',
+              command: 'sidecar-command',
+              memory: 12,
+            )
+          end
 
           it 'assigns the sidecar to the app' do
             subject.apply_to_app(app, user_audit_info)
 
+            expect(app.reload.sidecars).to have(1).items
             expect(app.sidecars.first.name).to eq('sidecar-name')
             expect(app.sidecars.first.command).to eq('sidecar-command')
+            expect(app.sidecars.first.memory).to eq(12)
+            expect(app.sidecars.first.process_types).to eq(revision_sidecar.process_types)
+          end
+        end
+
+        context 'removing sidecars from the app' do
+          let!(:sidecar) { SidecarModel.make(app: app) }
+
+          it 'removes the sidecars from the app' do
+            subject.apply_to_app(app, user_audit_info)
+
+            expect(app.reload.sidecars).to have(0).items
+            expect(sidecar.exists?).to be_falsey
           end
         end
       end
