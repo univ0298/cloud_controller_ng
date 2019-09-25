@@ -419,7 +419,6 @@ module VCAP::CloudController
     actee_type { Sham.name }
     actee_name { Sham.name }
     space      { Space.make }
-    organization_guid { Organization.make }
     metadata { {} }
   end
 

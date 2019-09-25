@@ -60,6 +60,7 @@ RSpec.shared_examples 'permissions for single object endpoint' do |roles|
           user_name: user_name,
           email: email,
         })
+
         api_call.call(headers)
 
         expected_response_code = expected_codes_and_responses[role][:code]

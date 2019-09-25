@@ -126,7 +126,7 @@ module VCAP
         end
 
         def can_update_space?(space_id, org_id)
-          can_read_globally? || has_any_permission?([
+          can_write_globally? || has_any_permission?([
             { action: SPACE_MANAGER_ACTION, resource: space_id },
           ])
         end

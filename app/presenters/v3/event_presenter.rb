@@ -43,14 +43,14 @@ module VCAP::CloudController::Presenters::V3
     end
 
     def space
-      return nil unless event.space
+      return nil unless event.space_guid.present?
       {
         guid: event.space_guid,
       }
     end
 
     def org
-      return nil unless event.organization_guid
+      return nil unless event.organization_guid.present?
       {
         guid: event.organization_guid,
       }
