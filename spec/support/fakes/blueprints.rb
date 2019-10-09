@@ -180,6 +180,11 @@ module VCAP::CloudController
     resource_type { 'app' }
   end
 
+  JobWarningModel.blueprint do
+    guid { Sham.guid }
+    detail { 'job warning' }
+  end
+
   User.blueprint do
     guid { Sham.uaa_id }
   end
@@ -554,6 +559,7 @@ module VCAP::CloudController
     name { Sham.name }
     command { 'bundle exec rackup' }
     app { AppModel.make }
+    origin { SidecarModel::ORIGIN_USER }
   end
 
   SidecarProcessTypeModel.blueprint do

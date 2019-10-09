@@ -1,4 +1,5 @@
 require 'process_create_from_app_droplet'
+require 'sidecar_synchronize_from_app_droplet'
 
 module VCAP::CloudController
   class AppAssignDroplet
@@ -19,13 +20,15 @@ module VCAP::CloudController
         app.update(droplet_guid: droplet.guid)
 
         record_assign_droplet_event(app, droplet)
+        synchronize_sidecars(app)
         create_processes(app)
 
         app.save
       end
 
       app
-    rescue ProcessCreateFromAppDroplet::ProcessTypesNotFound => e
+    rescue ProcessCreateFromAppDroplet::ProcessTypesNotFound,
+           SidecarSynchronizeFromAppDroplet::ConflictingSidecarsError => e
       raise InvalidDroplet.new(e.message)
     rescue ProcessCreate::SidecarMemoryLessThanProcessMemory, Sequel::ValidationFailed => e
       raise InvalidApp.new(e.message)
@@ -44,6 +47,10 @@ module VCAP::CloudController
 
     def create_processes(app)
       ProcessCreateFromAppDroplet.new(@user_audit_info).create(app)
+    end
+
+    def synchronize_sidecars(app)
+      SidecarSynchronizeFromAppDroplet.synchronize(app)
     end
 
     def droplet_associated?(app, droplet)
