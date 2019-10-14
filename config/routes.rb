@@ -235,4 +235,5 @@ Rails.application.routes.draw do
 
   # roles
   post '/roles', to: 'roles#create'
+  get '/roles', to: 'roles#index'
 end
