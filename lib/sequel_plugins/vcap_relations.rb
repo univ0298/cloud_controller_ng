@@ -153,7 +153,13 @@ module Sequel::Plugins::VcapRelations
         raise CloudController::Errors::ApiError.new_from_details('InvalidRelation', "Could not find #{ar.associated_class.name} with guid: #{guid}") if other.nil?
 
         if pk
+          puts "Caller: #{self.class} #{self.id} -- About to call add_#{singular_name} on #{other.class} with ID -- #{other.id}"
+          puts "#{self.class}.audited_spaces.map(&:id) before: #{self.audited_spaces.map(&:id)}"
+
           send("add_#{singular_name}", other)
+
+          puts "#{self.class}.audited_spaces after:  #{self.audited_spaces.map(&:id)}"
+
         else
           after_save_hook { send("add_#{singular_name}", other) }
         end

@@ -901,7 +901,12 @@ module VCAP::CloudController
           end
 
           it 'succeeds' do
+            puts "1st call to /v2/users/#{other_user.guid}/audited_spaces/#{space.guid}}"
             put "/v2/users/#{other_user.guid}/audited_spaces/#{space.guid}"
+            puts "2nd call to /v2/users/#{other_user.guid}/audited_spaces/#{space.guid}}"
+            put "/v2/users/#{other_user.guid}/audited_spaces/#{space.guid}"
+            puts "\n\n"
+            expect(last_response.status).to eq(201)
             expect(last_response.status).to eq(201)
             expect(space.auditors).to include(other_user)
             expect(decoded_response).to be_a_response_like(expected_response)
