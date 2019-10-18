@@ -2,19 +2,36 @@ require 'spec_helper'
 require 'request_spec_shared_examples'
 
 RSpec.describe 'Users Request' do
-  let(:other_user) { VCAP::CloudController::User.make(guid: 'other-user') }
   let(:user) { VCAP::CloudController::User.make(guid: 'user1') }
   let(:client) { VCAP::CloudController::User.make(guid: 'client-user') }
-  let(:space) { VCAP::CloudController::Space.make }
-  let(:org) { space.organization }
   let(:admin_header) { headers_for(user, scopes: %w(cloud_controller.admin)) }
   let(:uaa_client) { instance_double(VCAP::CloudController::UaaClient) }
+  let(:other_user) { VCAP::CloudController::User.make(guid: other_user_guid) }
   let(:other_user_guid) { 'some-user-guid' }
+
+  let(:organization1) { VCAP::CloudController::Organization.make }
+  let(:organization2) { VCAP::CloudController::Organization.make }
+
+  let(:space1) { VCAP::CloudController::Space.make(organization: organization1) }
+  let(:space2a) { VCAP::CloudController::Space.make(organization: organization2) }
+  let(:space2b) { VCAP::CloudController::Space.make(organization: organization2) }
+
+  let(:space1_user) { VCAP::CloudController::User.make(guid: 'space1-user') }
+  let(:space2a_user) { VCAP::CloudController::User.make(guid: 'space2a-user') }
+  let(:space2b_user) { VCAP::CloudController::User.make(guid: 'space2b-user') }
+  let(:organization1_user) { VCAP::CloudController::User.make(guid: 'organization1-user') }
+  let(:organization2_user) { VCAP::CloudController::User.make(guid: 'organization2-user') }
+
+  let(:space_role) { VCAP::CloudController::SpaceAuditor.make(guid: 'space1-role-guid', space: space1, user: space1_user) }
+  let(:space2a_role) { VCAP::CloudController::SpaceManager.make(guid: 'space2a-role-guid', space: space2a, user: space2a_user) }
+  let(:space2b_role) { VCAP::CloudController::SpaceManager.make(guid: 'space2b-role-guid', space: space2b, user: space2b_user) }
+  let(:organization1_role) { VCAP::CloudController::OrganizationAuditor.make(guid: 'organization1-role-guid', space: organization1, user: organization1_user) }
+  let(:organization2_role) { VCAP::CloudController::OrganizationBillingManager.make(guid: 'organization2-role-guid', space: organization2, user: organization2_user) }
 
   before do
     VCAP::CloudController::User.dataset.destroy # this will clean up the seeded test users
     allow(VCAP::CloudController::UaaClient).to receive(:new).and_return(uaa_client)
-    allow(uaa_client).to receive(:users_for_ids).with(contain_exactly(other_user.guid, client.guid, user.guid)).and_return(
+    allow(uaa_client).to receive(:users_for_ids).with(contain_exactly(other_user_guid, client.guid, user.guid)).and_return(
       {
         user.guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' },
         other_user.guid => { 'username' => 'lola', 'origin' => 'uaa' },
@@ -223,6 +240,74 @@ RSpec.describe 'Users Request' do
 
     it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
 
+    describe 'user visibility' do
+      let(:org) { VCAP::CloudController::Organization.make }
+      let(:space) { VCAP::CloudController::Space.make(organization: org) }
+
+      ALL_PERMISSIONS.each do |actee_role|
+        context "viewing a user with role #{actee_role}" do
+          let(:actee_user) { VCAP::CloudController::User.make }
+          let(:api_call) { lambda { |user_headers| get "/v3/users/#{actee_user.guid}", nil, user_headers } }
+          let(:user_header) { headers_for(user, scopes: %w(cloud_controller.read)) }
+
+          let(:actee_user_json) do
+            {
+              guid: actee_user.guid,
+              created_at: iso8601,
+              updated_at: iso8601,
+              username: 'merric',
+              presentation_name: 'merric',
+              origin: 'uaa',
+              metadata: {
+                labels: {},
+                annotations: {}
+              },
+              links: {
+                self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{actee_user.guid}) },
+              }
+            }
+          end
+
+          let(:expected_codes_and_responses) do
+            h = Hash.new(code: 404)
+
+            h['admin'] = { code: 200, response_object: actee_user_json }
+
+            h['admin_read_only'] = { code: 200, response_object: actee_user_json }
+            h['global_auditor'] = { code: 200, response_object: actee_user_json }
+
+            h['space_developer'] = { code: 200, response_object: actee_user_json }
+            h['space_manager'] = { code: 200, response_object: actee_user_json }
+            h['space_auditor'] = { code: 200, response_object: actee_user_json }
+
+            if %w[org_manager org_auditor org_billing_manager].include?(actee_role)
+              h['org_manager'] = { code: 200, response_object: actee_user_json }
+              h['org_auditor'] = { code: 200, response_object: actee_user_json }
+              h['org_billing_manager'] = { code: 200, response_object: actee_user_json }
+
+            elsif %w[space_developer space_manager space_auditor].include?(actee_role)
+              h['org_auditor'] = { code: 404, response_object: actee_user_json }
+              h['org_billing_manager'] = { code: 404, response_object: actee_user_json }
+            end
+
+            h.freeze
+          end
+
+          before do
+            allow(uaa_client).to receive(:users_for_ids).with([actee_user.guid]).and_return(
+              {
+                actee_user.guid => { 'username' => 'merric', 'origin' => 'uaa' },
+              }
+            )
+
+            set_current_user_as_role(role: actee_role, org: org, space: space, user: actee_user)
+          end
+
+          it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+        end
+      end
+    end
+
     describe 'when the user is not logged in' do
       it 'returns 401 for Unauthenticated requests' do
         get "/v3/users/#{user.guid}", nil, base_json_headers
@@ -234,7 +319,7 @@ RSpec.describe 'Users Request' do
       let(:user_header) { headers_for(user, scopes: %w(cloud_controller.read)) }
 
       before do
-        set_current_user_as_role(role: 'space_developer', org: org, space: space, user: user)
+        set_current_user_as_role(role: 'space_developer', org: org, space: space1, user: user)
       end
 
       it 'returns 200 when showing current user' do
@@ -510,20 +595,22 @@ RSpec.describe 'Users Request' do
 
   describe 'PATCH /v3/users/:guid' do
     describe 'metadata' do
-      let(:api_call) { lambda { |user_headers| patch "/v3/users/#{other_user.guid}", {
-        metadata: {
-          labels: {
-            'potato': 'yam',
-            'style': 'casserole',
-          },
-          annotations: {
-            'potato': 'russet',
-            'style': 'french',
+      let(:params) do
+        {
+          metadata: {
+            labels: {
+              'potato': 'yam',
+              'style': 'casserole',
+            },
+            annotations: {
+              'potato': 'russet',
+              'style': 'french',
+            }
           }
         }
-      }.to_json, user_headers
-                       }
-      }
+      end
+
+      let(:api_call) { lambda { |user_headers| patch "/v3/users/#{other_user.guid}", params.to_json, user_headers } }
 
       let(:client_json) do
         {
@@ -574,7 +661,7 @@ RSpec.describe 'Users Request' do
       context 'when metadata is invalid' do
         it 'returns a 422' do
           patch "/v3/users/#{other_user.guid}", {
-              metadata: {
+            metadata: {
               labels: { '': 'invalid' },
               annotations: { "#{'a' * 1001}": 'value2' }
             }
@@ -627,7 +714,7 @@ RSpec.describe 'Users Request' do
       describe 'when the current non-admin user tries to delete themselves' do
         let(:user_header) { headers_for(user_to_delete, scopes: %w(cloud_controller.write)) }
         before do
-          set_current_user_as_role(role: 'space_developer', org: org, space: space, user: user_to_delete)
+          set_current_user_as_role(role: 'space_developer', organization1: org, space1: space1, user: user_to_delete)
         end
 
         it 'returns 403' do
@@ -649,7 +736,7 @@ RSpec.describe 'Users Request' do
         let(:user_header) { headers_for(user_to_delete, scopes: %w(cloud_controller.write)) }
 
         before do
-          set_current_user_as_role(role: 'space_developer', org: org, space: space, user: user_to_delete)
+          set_current_user_as_role(role: 'space_developer', organization1: org, space1: space1, user: user_to_delete)
         end
 
         it 'returns 404' do

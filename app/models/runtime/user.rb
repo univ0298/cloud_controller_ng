@@ -1,6 +1,7 @@
 module VCAP::CloudController
   class User < Sequel::Model
-    class InvalidOrganizationRelation < CloudController::Errors::InvalidRelation; end
+    class InvalidOrganizationRelation < CloudController::Errors::InvalidRelation;
+    end
     attr_accessor :username, :organization_roles, :space_roles, :origin
 
     no_auto_guid
@@ -58,14 +59,14 @@ module VCAP::CloudController
     export_attributes :admin, :active, :default_space_guid
 
     import_attributes :guid, :admin, :active,
-                      :organization_guids,
-                      :managed_organization_guids,
-                      :billing_managed_organization_guids,
-                      :audited_organization_guids,
-                      :space_guids,
-                      :managed_space_guids,
-                      :audited_space_guids,
-                      :default_space_guid
+      :organization_guids,
+      :managed_organization_guids,
+      :billing_managed_organization_guids,
+      :audited_organization_guids,
+      :space_guids,
+      :managed_space_guids,
+      :audited_space_guids,
+      :default_space_guid
 
     def before_destroy
       LabelDelete.delete(labels)
@@ -135,12 +136,52 @@ module VCAP::CloudController
         )
     end
 
+    def membership_organizations
+      Organization.join(:organizations_users, organization_id: :id, user_id: id).select(:organizations__id).
+        union(
+          Organization.join(:organizations_auditors, organization_id: :id, user_id: id).select(:organizations__id)
+        ).
+        union(
+          Organization.join(:organizations_managers, organization_id: :id, user_id: id).select(:organizations__id)
+        ).
+        union(
+          Organization.join(:organizations_billing_managers, organization_id: :id, user_id: id).select(:organizations__id)
+        )
+    end
+
+    def visible_users_in_my_orgs
+
+      User.join(:organizations_users, organization_id: :id, user_id: id).where(id: membership_organizations).
+        union(
+          # select(WHERE org_id IN my_orgs)
+          User.join(:organizations_auditors, organization_id: :id, user_id: id).where(id: membership_organizations)
+        ).
+        union(
+          User.join(:organizations_managers, organization_id: :id, user_id: id).where(id: membership_organizations)
+        ).
+        union(
+          User.join(:organizations_billing_managers, organization_id: :id, user_id: id).where(id: membership_organizations)
+        )
+    end
+
+
+
+
+
     def self.readable_users_for_current_user(can_read_secrets_globally, current_user)
       if can_read_secrets_globally
         User.dataset
       else
         User.where(guid: current_user.guid)
       end
+    end
+
+    def self.readable_users_for_current_user_with_roles(permission_queryer, current_user)
+      if can_read_org(id, org_id)
+
+      end
+
+
     end
 
     def self.user_visibility_filter(_)

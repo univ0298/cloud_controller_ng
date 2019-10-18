@@ -82,7 +82,8 @@ class UsersController < ApplicationController
   private
 
   def fetch_readable_users(message)
-    UserListFetcher.fetch_all(message, User.readable_users_for_current_user(permission_queryer.can_read_secrets_globally?, current_user))
+    # UserListFetcher.fetch_all()
+    # UserListFetcher.fetch_all(message, User.readable_users_for_current_user(permission_queryer.can_read_secrets_globally?, current_user))
   end
 
   def uaa_users_info(user_guids)

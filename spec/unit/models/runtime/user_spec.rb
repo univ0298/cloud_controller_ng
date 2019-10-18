@@ -307,5 +307,97 @@ module VCAP::CloudController
         expect(ids).to match_array([developer_space, manager_space, auditor_space].map(&:id))
       end
     end
+
+    describe '#membership_organizations' do
+      it 'returns a list of orgs that the user is a member of' do
+        user = User.make
+        user_organization = Organization.make
+        billing_manager_organization = Organization.make
+        auditor_organization = Organization.make
+        manager_organization = Organization.make
+
+        user_organization.add_user user
+        manager_organization.add_manager user
+        auditor_organization.add_auditor user
+        billing_manager_organization.add_billing_manager user
+
+        ids = user.membership_organizations.all.map(&:id)
+
+        expect(ids).to match_array([
+          user_organization,
+          billing_manager_organization,
+          manager_organization,
+          auditor_organization
+        ].map(&:id))
+      end
+    end
+
+    describe '#visable_users_in_my_orgs' do
+      it 'returns a list of users in orgs that the user is a member of' do
+        actor = User.make
+        actee1 = User.make
+        actee2 = User.make
+        actee3 = User.make
+        actee4 = User.make
+        user_organization = Organization.make
+        billing_manager_organization = Organization.make
+        auditor_organization = Organization.make
+        manager_organization = Organization.make
+
+        user_organization.add_user actor
+        manager_organization.add_manager actor
+        auditor_organization.add_auditor actor
+        billing_manager_organization.add_billing_manager actor
+
+        user_organization.add_user actee1
+        manager_organization.add_manager actee2
+        auditor_organization.add_auditor actee3
+        billing_manager_organization.add_billing_manager actee4
+
+        ids = actor.visable_users_in_my_orgs.all.map(&:id)
+
+        expect(ids).to match_array([
+          actee1,
+          actee2,
+          actee3,
+          actee4
+        ].map(&:id))
+      end
+
+      it 'doesnt repeat users' do
+        actor = User.make
+        actee1 = User.make
+
+        user_organization = Organization.make
+        billing_manager_organization = Organization.make
+        auditor_organization = Organization.make
+        manager_organization = Organization.make
+
+        user_organization.add_user actor
+        manager_organization.add_manager actor
+        auditor_organization.add_auditor actor
+        billing_manager_organization.add_billing_manager actor
+
+        user_organization.add_user actee1
+        manager_organization.add_manager actee1
+        auditor_organization.add_auditor actee1
+        billing_manager_organization.add_billing_manager actee1
+
+        ids = actor.visible_users_in_my_orgs.all.map(&:id)
+
+        expect(ids).to match_array([
+          actee1,
+        ].map(&:id))
+      end
+    end
+
+    # describe '#readable_users_for_current_user_with_roles' do
+    #   RoleTypes.ALL_ROLES.each do |role|
+    #     context("as a #{role}") do
+    #     #   current user is a role (which is a org role)
+    #     #
+    #     end
+    #   end
+    # end
   end
 end
