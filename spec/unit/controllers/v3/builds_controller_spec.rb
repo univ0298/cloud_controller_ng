@@ -386,6 +386,28 @@ RSpec.describe BuildsController, type: :controller do
       end
     end
 
+    describe 'kpack lifecycle' do
+      let(:kpack_lifecycle) do
+        {type: 'kpack', data: {}}
+      end
+      let(:req_body) do
+        {
+          package: {
+            guid: package.guid
+          },
+          lifecycle: kpack_lifecycle
+        }
+      end
+
+      it 'should work' do
+        post :create, params: req_body, as: :json
+        expect(response.status).to eq 201
+        expect(VCAP::CloudController::BuildModel.count).to(1)
+        build = VCAP::CloudController::BuildModel.last
+        expect(build.package.guid).to eq(package.guid)
+      end
+    end
+
     describe 'docker lifecycle' do
       let(:docker_app_model) { VCAP::CloudController::AppModel.make(:docker, space: space) }
       let(:package) do
