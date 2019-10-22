@@ -163,6 +163,7 @@ module VCAP::CloudController
       remove_audited_space space
     end
 
+    # Give me all the spaces that the actor is a member of
     def membership_spaces
       Space.join(:spaces_developers, space_id: :id, user_id: id).select(:spaces__id).
         union(
@@ -173,6 +174,47 @@ module VCAP::CloudController
         )
     end
 
+    # Give me all users in spaces that the actor is a member of
+    def visible_users_in_my_spaces
+      visible_users = User.join(:spaces_developers, user_id: :id).where(space_id: membership_spaces).
+                      union(
+                        User.join(:spaces_auditors, user_id: :id).where(space_id: membership_spaces)
+        ).
+                      union(
+                        User.join(:spaces_managers, user_id: :id).where(space_id: membership_spaces)
+        )
+      visible_users.select(:id, :guid).distinct
+    end
+
+    # Give me all the orgs that the actor is a member of
+    def membership_organizations
+      Organization.join(:organizations_users, organization_id: :id, user_id: id).select(:organizations__id).
+        union(
+          Organization.join(:organizations_auditors, organization_id: :id, user_id: id).select(:organizations__id)
+        ).
+        union(
+          Organization.join(:organizations_managers, organization_id: :id, user_id: id).select(:organizations__id)
+        ).
+        union(
+          Organization.join(:organizations_billing_managers, organization_id: :id, user_id: id).select(:organizations__id)
+        )
+    end
+
+    # Give me all users in orgs that the actor is a member of
+    def visible_users_in_my_orgs
+      visible_users = User.join(:organizations_users, user_id: :id).where(organization_id: membership_organizations).
+                      union(
+                        User.join(:organizations_auditors, user_id: :id).where(organization_id: membership_organizations)
+        ).
+                      union(
+                        User.join(:organizations_managers, user_id: :id).where(organization_id: membership_organizations)
+        ).
+                      union(
+                        User.join(:organizations_billing_managers, user_id: :id).where(organization_id: membership_organizations)
+        )
+      visible_users.select(:id, :guid).distinct
+    end
+
     def self.readable_users_for_current_user(can_read_secrets_globally, current_user)
       if can_read_secrets_globally
         User.dataset
@@ -180,6 +222,8 @@ module VCAP::CloudController
         User.where(guid: current_user.guid)
       end
     end
+
+    def self.readable_users_for_current_user_with_roles(permission_queryer, current_user); end
 
     def self.user_visibility_filter(_)
       full_dataset_filter

@@ -11,6 +11,7 @@ class UsersController < ApplicationController
   def index
     message = UsersListMessage.from_params(query_params)
     unprocessable!(message.errors.full_messages) unless message.valid?
+
     users = fetch_readable_users(message)
     user_guids = users.map(&:guid)
 
