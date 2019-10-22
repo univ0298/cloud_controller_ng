@@ -402,9 +402,10 @@ RSpec.describe BuildsController, type: :controller do
       it 'should work' do
         post :create, params: req_body, as: :json
         expect(response.status).to eq 201
-        expect(VCAP::CloudController::BuildModel.count).to(1)
+        expect(VCAP::CloudController::BuildModel.count).to eq(1)
         build = VCAP::CloudController::BuildModel.last
         expect(build.package.guid).to eq(package.guid)
+        # expect(build.lifecycle_type).to eq('KpackLifecycle')
       end
     end
 

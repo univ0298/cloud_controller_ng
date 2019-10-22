@@ -3,6 +3,7 @@ require 'cloud_controller/backends/staging_disk_calculator'
 require 'cloud_controller/backends/staging_environment_builder'
 require 'cloud_controller/diego/staging_details'
 require 'cloud_controller/diego/lifecycles/lifecycle_provider'
+require 'jobs/v3/kpack_job'
 require 'repositories/app_usage_event_repository'
 
 module VCAP::CloudController
@@ -63,6 +64,9 @@ module VCAP::CloudController
 
         raise CloudController::Errors::ApiError.new_from_details('CustomBuildpacksDisabled') if using_disabled_custom_buildpack?(build)
 
+        kpack_job = Jobs::V3::KpackJob.new(build.guid)
+        Jobs::Enqueuer.new(kpack_job).enqueue
+
         Repositories::AppUsageEventRepository.new.create_from_build(build, 'STAGING_STARTED')
         app = package.app
         Repositories::BuildEventRepository.record_build_create(build,
@@ -86,6 +90,7 @@ module VCAP::CloudController
 
     def requested_buildpacks_disabled!(lifecycle)
       return if lifecycle.type == Lifecycles::DOCKER
+      return if lifecycle.type == Lifecycles::KPACK
 
       admin_buildpack_records = lifecycle.buildpack_infos.map(&:buildpack_record).compact
       disabled_buildpacks = admin_buildpack_records.reject(&:enabled)
