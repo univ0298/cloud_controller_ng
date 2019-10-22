@@ -2,21 +2,28 @@ module VCAP::CloudController
   module Jobs
     module V3
       class KpackJob
+
+        attr_reader :build
+
         def initialize(build_guid)
-          @build_guid = build_guid
+          @build = BuildModel.first(guid: build_guid)
 
         end
 
         def perform
+          # generate yaml
+          blobstore = CloudController::DependencyLocator.instance.package_blobstore
+          blob = blobstore.blob(build.package.guid)
+
           image_json = {
             apiVersion: 'build.pivotal.io/v1alpha1',
             kind: 'Image',
             metadata: {
-              name: 'catnip',
+              name: "#{build.guid}",
               namespace: 'default'
             },
             spec: {
-              tag: 'gcr.io/cf-capi-arya/catnip-image-hackday',
+              tag: "gcr.io/cf-capi-arya/#{build.guid}",
               serviceAccount: 'kpack-service-account-hackday'
             },
             builder: {
@@ -25,14 +32,14 @@ module VCAP::CloudController
             },
             source: {
               blob: {
-                url: 'https://storage.googleapis.com/capi-rey-packages/98/57/9857165d-f784-42be-9ae7-052971eab188'
+                url: blob.public_download_url
               }
             }
           }
 
           image_spec = image_json.to_json
 
-          # generate yaml
+          # Kubeclient::Client.new()
           # kubectl apply -f image-spec.yaml
           # use https://github.com/abonas/kubeclient#watch-events-for-a-particular-object to know when done
           # create job
