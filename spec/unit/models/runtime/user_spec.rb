@@ -310,7 +310,7 @@ module VCAP::CloudController
         expect(ids).to match_array([developer_space, manager_space, auditor_space].map(&:id))
       end
 
-      it 'omits spaces that the user isnt a member of' do
+      it "omits spaces that the user isn't a member of" do
         outside_user = User.make guid: 'outside_user_guid'
         organization.add_user outside_user
 
@@ -325,25 +325,29 @@ module VCAP::CloudController
 
     describe '#visible_users_in_my_spaces' do
       let(:user_organization) { Organization.make }
+
       let(:developer_space) { Space.make(organization: user_organization) }
       let(:auditor_space) { Space.make(organization: user_organization) }
       let(:manager_space) { Space.make(organization: user_organization) }
-      let(:different_space) { Space.make(organization: user_organization) }
+      let(:outside_space) { Space.make(organization: user_organization) }
+
       let(:other_user1) { User.make(guid: 'other_user1.guid') }
       let(:other_user2) { User.make(guid: 'other_user2.guid') }
       let(:other_user3) { User.make(guid: 'other_user3.guid') }
-      let(:other_user_in_a_different_space) { User.make(guid: 'other_user_in_a_different_space_guid') }
+      let(:other_user_in_outside_space) { User.make(guid: 'other_user_in_outside_space_guid') }
 
       before do
+        # Add other users as org members in order to assign space roles to them
         user_organization.add_user(other_user1)
         user_organization.add_user(other_user2)
         user_organization.add_user(other_user3)
-        user_organization.add_user(other_user_in_a_different_space)
+        user_organization.add_user(other_user_in_outside_space)
 
+        # Assign space roles
         manager_space.add_manager(other_user1)
         auditor_space.add_auditor(other_user2)
         developer_space.add_developer(other_user3)
-        different_space.add_developer(other_user_in_a_different_space)
+        outside_space.add_developer(other_user_in_outside_space)
       end
 
       it 'returns a list of users in spaces that the user is a member of' do
@@ -404,7 +408,7 @@ module VCAP::CloudController
         ].map(&:id))
       end
 
-      it 'omits orgs that the user isnt a member of' do
+      it "omits orgs that the user isn't a member of" do
         outside_organization = Organization.make
 
         ids = user.membership_organizations.all.map(&:id)
@@ -414,46 +418,68 @@ module VCAP::CloudController
           manager_organization,
           auditor_organization].map(&:id))
       end
-
-
     end
 
     describe '#visible_users_in_my_orgs' do
+      let(:user_organization) { Organization.make }
+      let(:manager_organization) { Organization.make }
+      let(:auditor_organization) { Organization.make }
+      let(:billing_manager_organization) { Organization.make }
+      let(:outside_organization) { Organization.make }
+
+      let(:other_user1) { User.make(guid: 'other_user1-guid') }
+      let(:other_user2) { User.make(guid: 'other_user2-guid') }
+      let(:other_user3) { User.make(guid: 'other_user3-guid') }
+      let(:other_user4) { User.make(guid: 'other_user4-guid') }
+      let(:outside_other_user) { User.make(guid: 'outside_other_user-guid') }
+
+      before do
+        user_organization.add_user(other_user1)
+        manager_organization.add_manager(other_user2)
+        auditor_organization.add_auditor(other_user3)
+        billing_manager_organization.add_billing_manager(other_user4)
+        outside_organization.add_billing_manager(outside_other_user)
+      end
+
       it 'returns a list of users in orgs that the user is a member of' do
-        actor = User.make(guid: 'actor9-guid')
-        actee1 = User.make(guid: 'actee1-guid')
-        actee2 = User.make(guid: 'actee2-guid')
-        actee3 = User.make(guid: 'actee3-guid')
-        actee4 = User.make(guid: 'actee4-guid')
-        outside_actee = User.make(guid: 'outside_actee-guid')
+        user = User.make(guid: 'user-guid')
+        org_manager = User.make(guid: 'org_manager-guid')
+        org_auditor = User.make(guid: 'org_auditor-guid')
+        org_billing_manager = User.make(guid: 'org_billing_manager-guid')
 
-        user_organization = Organization.make
-        manager_organization = Organization.make
-        auditor_organization = Organization.make
-        billing_manager_organization = Organization.make
-        outside_organization = Organization.make
+        user_organization.add_user(user)
+        manager_organization.add_manager(org_manager)
+        auditor_organization.add_auditor(org_auditor)
+        billing_manager_organization.add_billing_manager(org_billing_manager)
 
-        user_organization.add_user actor
-        manager_organization.add_manager actor
-        auditor_organization.add_auditor actor
-        billing_manager_organization.add_billing_manager actor
-
-        user_organization.add_user actee1
-        manager_organization.add_manager actee2
-        auditor_organization.add_auditor actee3
-        billing_manager_organization.add_billing_manager actee4
-        outside_organization.add_billing_manager outside_actee
-
-        guids = actor.visible_users_in_my_orgs.all.map(&:guid)
-
-        expect(guids).to match_array(
+        user_result = user.visible_users_in_my_orgs.all.map(&:guid)
+        expect(user_result).to match_array(
           [
-            actor.guid,
-            actee1.guid,
-            actee2.guid,
-            actee3.guid,
-            actee4.guid
-          ])
+            user.guid,
+            other_user1.guid,
+          ],
+        )
+        manager_result = org_manager.visible_users_in_my_orgs.all.map(&:guid)
+        expect(manager_result).to match_array(
+          [
+            org_manager.guid,
+            other_user2.guid,
+          ],
+        )
+        auditor_result = org_auditor.visible_users_in_my_orgs.all.map(&:guid)
+        expect(auditor_result).to match_array(
+          [
+            org_auditor.guid,
+            other_user3.guid,
+          ],
+        )
+        billing_manager_result = org_billing_manager.visible_users_in_my_orgs.all.map(&:guid)
+        expect(billing_manager_result).to match_array(
+          [
+            org_billing_manager.guid,
+            other_user4.guid
+          ],
+        )
       end
     end
 
