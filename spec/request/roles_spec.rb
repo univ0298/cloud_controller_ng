@@ -370,4 +370,109 @@ RSpec.describe 'Roles Request' do
       end
     end
   end
+
+  describe 'GET /v3/roles' do
+    let(:api_call) { lambda { |user_headers| get '/v3/roles', nil, user_headers } }
+    let!(:space_auditor) do
+      VCAP::CloudController::SpaceAuditor.make(guid: "space-role-guid", space: space, user: user)
+    end
+
+    let!(:organization_auditor) do
+      VCAP::CloudController::OrganizationAuditor.make(guid: "organization-role-guid", organization: org, user: user)
+    end
+
+    let (:space_response_object) do
+    {
+      "guid": space_auditor.guid,
+      "created_at": "2016-05-04T17:00:41Z",
+      "updated_at": "2016-05-04T17:00:41Z",
+      "type": "space_auditor",
+      "relationships": {
+        "user": {
+          "data": {"guid": user.guid}
+        },
+        "organization": {"data": nil},
+        "space": {
+          "data": {"guid": space.guid}
+        }
+      },
+      "links": {
+        "self": { "href": "https://api.example.org/v3/roles/#{space_auditor.guid}" },
+        "user": { "href": "https://api.example.org/v3/users/#{user.guid}" },
+        "space": { "href": "https://api.example.org/v3/spaces/#{space.guid}" }
+      }
+    }
+    end
+
+    let (:org_response_object) do
+      {
+        "guid": organization_auditor.guid,
+        "created_at": "2016-05-04T17:00:41Z",
+        "updated_at": "2016-05-04T17:00:41Z",
+        "type": "organization_auditor",
+        "relationships": {
+          "user": {
+            "data": {"guid": user.guid}
+          },
+          "organization": {
+            "data": {"guid": org.guid}
+          },
+        },
+        "links": {
+          "self": { "href": "https://api.example.org/v3/roles/#{organization_auditor.guid}" },
+          "user": { "href": "https://api.example.org/v3/users/#{user.guid}" },
+          "organization": { "href": "https://api.example.org/v3/organization/#{org.guid}" }
+        }
+      }
+    end
+
+    context 'listing all roles' do
+      let(:expected_response) do
+        {
+          guid: UUID_REGEX,
+          created_at: iso8601,
+          updated_at: iso8601,
+          type: 'organization_auditor',
+          relationships: {
+            user: {
+              data: { guid: user_with_role.guid }
+            },
+            space: {
+              data: nil
+            },
+            organization: {
+              data: { guid: org.guid }
+            }
+          },
+          links: {
+            self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/roles\/#{UUID_REGEX}) },
+            user: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{user_with_role.guid}) },
+            organization: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/organizations\/#{org.guid}) },
+          }
+        }
+      end
+
+      let(:expected_codes_and_responses) do
+        h = Hash.new(code: 200, response_object: [space_response_object, org_response_object])
+        h['organization_auditor'] = {
+          code: 200,
+          response_object: [ org_response_object ]
+        }
+        h['organization_billing_manager'] = {
+          code: 200,
+          response_object: [ org_response_object ]
+        }
+        h
+      end
+
+      it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
+
+      context 'when the user is not logged in' do
+        it 'returns 401 for Unauthenticated requests' do
+          post '/v3/roles', nil, base_json_headers
+          expect(last_response.status).to eq(401)
+        end
+      end
+    end
+  end
 end

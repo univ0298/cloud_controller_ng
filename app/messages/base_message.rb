@@ -50,7 +50,7 @@ module VCAP::CloudController
     def self.from_params(params, to_array_keys)
       opts = params.dup
       to_array_keys.each do |attribute|
-        to_array! opts, attribute
+        to_array!(opts, attribute)
       end
       message = new(opts.symbolize_keys)
       message
