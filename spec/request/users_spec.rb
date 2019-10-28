@@ -2,33 +2,41 @@ require 'spec_helper'
 require 'request_spec_shared_examples'
 
 RSpec.describe 'Users Request' do
-  let(:other_user) { VCAP::CloudController::User.make(guid: 'other-user') }
-  let(:user) { VCAP::CloudController::User.make(guid: 'user1') }
+  let(:actee) { VCAP::CloudController::User.make(guid: 'actee-guid') }
+  let(:user) { VCAP::CloudController::User.make(guid: 'user') }
   let(:client) { VCAP::CloudController::User.make(guid: 'client-user') }
   let(:space) { VCAP::CloudController::Space.make }
   let(:org) { space.organization }
   let(:admin_header) { headers_for(user, scopes: %w(cloud_controller.admin)) }
   let(:uaa_client) { instance_double(VCAP::CloudController::UaaClient) }
-  let(:other_user_guid) { 'some-user-guid' }
+  let(:actee_guid) { actee.guid }
 
   before do
     VCAP::CloudController::User.dataset.destroy # this will clean up the seeded test users
     allow(VCAP::CloudController::UaaClient).to receive(:new).and_return(uaa_client)
-    allow(uaa_client).to receive(:users_for_ids).with(contain_exactly(other_user.guid, client.guid, user.guid)).and_return(
+    allow(uaa_client).to receive(:users_for_ids).with(contain_exactly(actee.guid, client.guid, user.guid)).and_return(
       {
         user.guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' },
-        other_user.guid => { 'username' => 'lola', 'origin' => 'uaa' },
+        actee.guid => { 'username' => 'lola', 'origin' => 'uaa' },
       }
     )
+
+    allow(uaa_client).to receive(:users_for_ids).with(contain_exactly(actee.guid, user.guid)).and_return(
+      {
+        user.guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' },
+        actee.guid => { 'username' => 'lola', 'origin' => 'uaa' },
+      }
+    )
+
     allow(uaa_client).to receive(:users_for_ids).with([user.guid]).and_return(
       {
         user.guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' },
       }
     )
     allow(uaa_client).to receive(:users_for_ids).with([client.guid]).and_return({})
-    allow(uaa_client).to receive(:users_for_ids).with([other_user.guid]).and_return(
+    allow(uaa_client).to receive(:users_for_ids).with([actee.guid]).and_return(
       {
-        other_user.guid => { 'username' => 'lola', 'origin' => 'uaa' },
+        actee.guid => { 'username' => 'lola', 'origin' => 'uaa' },
       }
     )
   end
@@ -70,9 +78,9 @@ RSpec.describe 'Users Request' do
       }
     end
 
-    let(:other_user_json) do
+    let(:actee_json) do
       {
-        guid: other_user.guid,
+        guid: actee.guid,
         created_at: iso8601,
         updated_at: iso8601,
         username: 'lola',
@@ -83,41 +91,117 @@ RSpec.describe 'Users Request' do
           annotations: {}
         },
         links: {
-          self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{other_user.guid}) },
+          self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{actee.guid}) },
         }
       }
     end
 
-    context 'without filters' do
+    describe 'without filters' do
       let(:api_call) { lambda { |user_headers| get '/v3/users', nil, user_headers } }
 
-      let(:expected_codes_and_responses) do
-        h = Hash.new(
-          code: 200,
-          response_objects: [
-            current_user_json
-          ]
-        )
-        h['admin'] = {
-          code: 200,
-          response_objects: [
-            other_user_json,
-            client_json,
-            current_user_json
-          ]
-        }
-        h['admin_read_only'] = {
-          code: 200,
-          response_objects: [
-            other_user_json,
-            client_json,
-            current_user_json
-          ]
-        }
-        h.freeze
+      context 'when there are no other users in your space or org' do
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(
+            code: 200,
+            response_objects: [
+              current_user_json
+            ]
+          )
+          h['admin'] = {
+            code: 200,
+            response_objects: [
+              actee_json,
+              client_json,
+              current_user_json
+            ]
+          }
+          h['admin_read_only'] = {
+            code: 200,
+            response_objects: [
+              actee_json,
+              client_json,
+              current_user_json
+            ]
+          }
+          h['global_auditor'] = {
+            code: 200,
+            response_objects: [
+              actee_json,
+              client_json,
+              current_user_json
+            ]
+          }
+          h.freeze
+        end
+
+        it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
       end
 
-      it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
+      context 'when the actee has a space role' do
+        let(:actee_with_space_role) { actee }
+
+        before do
+          org.add_user(actee_with_space_role)
+          space.add_developer(actee_with_space_role)
+        end
+
+        let(:api_call) { lambda { |user_headers| get "/v3/users", nil, user_headers } }
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(
+            code: 200,
+            response_objects: [actee_json, current_user_json]
+          )
+
+          h['org_auditor'] = {
+            code: 200,
+            response_objects: [
+              current_user_json
+            ]
+          }
+          h['org_billing_manager'] = {
+            code: 200,
+            response_objects: [
+              current_user_json
+            ]
+          }
+          h['no_role'] = {
+            code: 200,
+            response_objects: [
+              current_user_json
+            ]
+          }
+          h['admin'] = {
+            code: 200,
+            response_objects: [
+              actee_json,
+              client_json,
+              current_user_json
+            ]
+          }
+          h['admin_read_only'] = {
+            code: 200,
+            response_objects: [
+              actee_json,
+              client_json,
+              current_user_json
+            ]
+          }
+          h['global_auditor'] = {
+            code: 200,
+            response_objects: [
+              actee_json,
+              client_json,
+              current_user_json
+            ]
+          }
+          h.freeze
+        end
+
+        it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
+      end
+
     end
 
     context 'with filters' do
@@ -132,17 +216,9 @@ RSpec.describe 'Users Request' do
               current_user_json
             ]
           )
-          h['admin'] = {
+          h['no_role'] = {
             code: 200,
-            response_objects: [
-              current_user_json
-            ]
-          }
-          h['admin_read_only'] = {
-            code: 200,
-            response_objects: [
-              current_user_json
-            ]
+            response_objects: []
           }
           h.freeze
         end
@@ -153,7 +229,7 @@ RSpec.describe 'Users Request' do
       describe 'labels' do
         let!(:user_label) { VCAP::CloudController::UserLabelModel.make(resource_guid: user.guid, key_name: 'animal', value: 'dog') }
 
-        let!(:other_user_label) { VCAP::CloudController::UserLabelModel.make(resource_guid: other_user.guid, key_name: 'animal', value: 'cow') }
+        let!(:actee_label) { VCAP::CloudController::UserLabelModel.make(resource_guid: actee.guid, key_name: 'animal', value: 'cow') }
 
         it 'returns a 200 and the filtered routes for "in" label selector' do
           get '/v3/users?label_selector=animal in (dog)', nil, admin_header
@@ -185,11 +261,11 @@ RSpec.describe 'Users Request' do
   end
 
   describe 'GET /v3/users/:guid' do
-    let(:api_call) { lambda { |user_headers| get "/v3/users/#{other_user.guid}", nil, user_headers } }
+    let(:api_call) { lambda { |user_headers| get "/v3/users/#{actee.guid}", nil, user_headers } }
 
     let(:client_json) do
       {
-        guid: other_user.guid,
+        guid: actee.guid,
         created_at: iso8601,
         updated_at: iso8601,
         username: 'lola',
@@ -200,7 +276,7 @@ RSpec.describe 'Users Request' do
           annotations: {}
         },
         links: {
-          self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{other_user.guid}) },
+          self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{actee.guid}) },
         }
       }
     end
@@ -215,6 +291,10 @@ RSpec.describe 'Users Request' do
         response_object: client_json
       }
       h['admin_read_only'] = {
+        code: 200,
+        response_object: client_json
+      }
+      h['global_auditor'] = {
         code: 200,
         response_object: client_json
       }
@@ -256,7 +336,7 @@ RSpec.describe 'Users Request' do
   describe 'POST /v3/users' do
     let(:params) do
       {
-        guid: other_user_guid,
+        guid: actee_guid,
       }
     end
 
@@ -367,7 +447,7 @@ RSpec.describe 'Users Request' do
     describe 'when creating a user that exists in uaa' do
       context "it's a UAA user" do
         before do
-          allow(uaa_client).to receive(:users_for_ids).and_return({ other_user_guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' } })
+          allow(uaa_client).to receive(:users_for_ids).and_return({ actee_guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' } })
         end
 
         let(:api_call) { lambda { |user_headers| post '/v3/users', params.to_json, user_headers } }
@@ -510,7 +590,7 @@ RSpec.describe 'Users Request' do
 
   describe 'PATCH /v3/users/:guid' do
     describe 'metadata' do
-      let(:api_call) { lambda { |user_headers| patch "/v3/users/#{other_user.guid}", {
+      let(:api_call) { lambda { |user_headers| patch "/v3/users/#{actee.guid}", {
         metadata: {
           labels: {
             'potato': 'yam',
@@ -522,12 +602,12 @@ RSpec.describe 'Users Request' do
           }
         }
       }.to_json, user_headers
-                       }
+      }
       }
 
       let(:client_json) do
         {
-          guid: other_user.guid,
+          guid: actee.guid,
           created_at: iso8601,
           updated_at: iso8601,
           username: 'lola',
@@ -573,8 +653,8 @@ RSpec.describe 'Users Request' do
 
       context 'when metadata is invalid' do
         it 'returns a 422' do
-          patch "/v3/users/#{other_user.guid}", {
-              metadata: {
+          patch "/v3/users/#{actee.guid}", {
+            metadata: {
               labels: { '': 'invalid' },
               annotations: { "#{'a' * 1001}": 'value2' }
             }

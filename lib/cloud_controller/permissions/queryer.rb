@@ -51,8 +51,8 @@ class VCAP::CloudController::Permissions::Queryer
 
   def can_read_secrets_globally?
     science 'can_read_secrets_globally' do |e|
-      e.use { db_permissions.can_read_secrets_globally? }
-      e.try { perm_permissions.can_read_secrets_globally? }
+      e.use { db_permissions.can_read_globally? }
+      e.try { perm_permissions.can_read_globally? }
 
       e.run_if { false }
     end

@@ -289,6 +289,130 @@ module VCAP::CloudController
       end
     end
 
+    describe '.readable_users_for_current_user' do
+      # See Miro board https://miro.com/app/board/o9J_kwAiqsc=/ for graphical explanation of test
+      let(:org_1) { Organization.make }
+      let(:org_2) { Organization.make }
+
+      let(:space_1a) { Space.make(organization: org_1) }
+      let(:space_2a) { Space.make(organization: org_2) }
+      let(:space_2b) { Space.make(organization: org_2) }
+
+      let(:org_1_manager) { User.make(guid: 'org_1_manager') }
+      let(:org_1_billing_manager) { User.make(guid: 'org_1_billing_manager') }
+      let(:org_1_auditor) { User.make(guid: 'org_1_auditor') }
+
+      let(:space_1a_manager) { User.make(guid: 'space_1a_manager') }
+      let(:space_1a_auditor) { User.make(guid: 'space_1a_auditor') }
+      let(:space_1a_developer) { User.make(guid: 'space_1a_developer') }
+
+      let(:space_2a_manager) { User.make(guid: 'space_2a_manager') }
+      let(:space_2a_auditor) { User.make(guid: 'space_2a_auditor') }
+      let(:space_2a_developer) { User.make(guid: 'space_2a_developer') }
+
+      let(:space_2b_manager) { User.make(guid: 'space_2b_manager') }
+      let(:space_2b_auditor) { User.make(guid: 'space_2b_auditor') }
+      let(:space_2b_developer) { User.make(guid: 'space_2b_developer') }
+
+      before do
+        OrganizationManager.make(user: org_1_manager, organization: org_1)
+        OrganizationBillingManager.make(user: org_1_billing_manager, organization: org_1)
+        OrganizationAuditor.make(user: org_1_auditor, organization: org_1)
+
+        SpaceManager.make(user: space_1a_manager, space: space_1a)
+        OrganizationUser.make(user: space_1a_manager, organization: org_1)
+        SpaceAuditor.make(user: space_1a_auditor, space: space_1a)
+        OrganizationUser.make(user: space_1a_auditor, organization: org_1)
+        SpaceDeveloper.make(user: space_1a_developer, space: space_1a)
+        OrganizationUser.make(user: space_1a_developer, organization: org_1)
+
+        SpaceManager.make(user: space_2a_manager, space: space_2a)
+        OrganizationUser.make(user: space_2a_manager, organization: org_2)
+        SpaceAuditor.make(user: space_2a_auditor, space: space_2a)
+        OrganizationUser.make(user: space_2a_auditor, organization: org_2)
+        SpaceDeveloper.make(user: space_2a_developer, space: space_2a)
+        OrganizationUser.make(user: space_2a_developer, organization: org_2)
+
+        SpaceManager.make(user: space_2b_manager, space: space_2b)
+        OrganizationUser.make(user: space_2b_manager, organization: org_2)
+        SpaceAuditor.make(user: space_2b_auditor, space: space_2b)
+        OrganizationUser.make(user: space_2b_auditor, organization: org_2)
+        SpaceDeveloper.make(user: space_2b_developer, space: space_2b)
+        OrganizationUser.make(user: space_2b_developer, organization: org_2)
+      end
+      context 'when an {admin, read_only_admin, global_auditor} lists users' do
+        it 'sees all the org users in managed org' do
+          expect(User.readable_users_for_current_user(true, User.make(guid: 'global-user')).map(&:guid)).
+            to(match_array([
+              'global-user',
+              'org_1_manager',
+              'org_1_billing_manager',
+              'org_1_auditor',
+              'space_1a_manager',
+              'space_1a_auditor',
+              'space_1a_developer',
+              'space_2a_manager',
+              'space_2a_auditor',
+              'space_2a_developer',
+              'space_2b_manager',
+              'space_2b_auditor',
+              'space_2b_developer',
+            ]
+            ))
+        end
+      end
+      context 'when an org manager lists users' do
+        it 'sees all the org users in managed org' do
+          expect(User.readable_users_for_current_user(false, org_1_manager).map(&:guid)).
+            to(match_array([
+              'org_1_manager',
+              'org_1_billing_manager',
+              'org_1_auditor',
+              'space_1a_manager',
+              'space_1a_auditor',
+              'space_1a_developer']
+            ))
+        end
+      end
+      context 'when an {org_billing_manager, org_auditor} lists users' do
+        it 'sees only the "managerial" org users' do
+          [org_1_billing_manager, org_1_auditor].each do |privileged_user|
+            expect(User.readable_users_for_current_user(false, privileged_user).map(&:guid)).
+              to(match_array([
+                'org_1_manager',
+                'org_1_billing_manager',
+                'org_1_auditor']
+              ))
+          end
+        end
+      end
+      context 'when a space {manager,auditor,developer} lists users' do
+        it 'sees the "managerial" org users and the users in its space' do
+          [space_1a_manager, space_1a_auditor, space_1a_developer].each do |space_user|
+            expect(User.readable_users_for_current_user(false, space_user).map(&:guid)).
+              to(match_array([
+                'org_1_manager',
+                'org_1_billing_manager',
+                'org_1_auditor',
+                'space_1a_manager',
+                'space_1a_auditor',
+                'space_1a_developer']
+              ))
+          end
+
+          [space_2a_manager, space_2a_auditor, space_2a_developer].each do |space_user|
+            expect(User.readable_users_for_current_user(false, space_user).map(&:guid)).
+              to(match_array([
+                'space_2a_manager',
+                'space_2a_auditor',
+                'space_2a_developer']
+              ))
+          end
+        end
+      end
+    end
+
+
     describe '#membership_spaces' do
       let(:user) { User.make }
       let(:organization) { Organization.make }
@@ -351,9 +475,9 @@ module VCAP::CloudController
       end
 
       it 'returns a list of users in spaces that the user is a member of' do
-        space_manager = User.make(guid: 'space_manager.guid')
-        space_auditor = User.make(guid: 'space_auditor.guid')
-        space_developer = User.make(guid: 'space_developer.guid')
+        space_manager = User.make
+        space_auditor = User.make
+        space_developer = User.make
 
         user_organization.add_user(space_manager)
         user_organization.add_user(space_auditor)
@@ -363,22 +487,22 @@ module VCAP::CloudController
         auditor_space.add_auditor(space_auditor)
         developer_space.add_developer(space_developer)
 
-        result = space_manager.visible_users_in_my_spaces.all.map(&:guid)
+        result = space_manager.visible_users_in_my_spaces.all.map(&:id)
         expect(result).to match_array([
-          space_manager.guid,
-          other_user1.guid,
+          space_manager.id,
+          other_user1.id,
         ])
 
-        result2 = space_auditor.visible_users_in_my_spaces.all.map(&:guid)
+        result2 = space_auditor.visible_users_in_my_spaces.all.map(&:id)
         expect(result2).to match_array([
-          space_auditor.guid,
-          other_user2.guid,
+          space_auditor.id,
+          other_user2.id,
         ])
 
-        result3 = space_developer.visible_users_in_my_spaces.all.map(&:guid)
+        result3 = space_developer.visible_users_in_my_spaces.all.map(&:id)
         expect(result3).to match_array([
-          space_developer.guid,
-          other_user3.guid,
+          space_developer.id,
+          other_user3.id,
         ])
       end
     end
@@ -436,77 +560,48 @@ module VCAP::CloudController
       before do
         user_organization.add_user(other_user1)
         manager_organization.add_manager(other_user2)
+        manager_organization.add_user(other_user1)
         auditor_organization.add_auditor(other_user3)
         billing_manager_organization.add_billing_manager(other_user4)
         outside_organization.add_billing_manager(outside_other_user)
       end
 
       it 'returns a list of users in orgs that the user is a member of' do
-        user = User.make(guid: 'user-guid')
-        org_manager = User.make(guid: 'org_manager-guid')
-        org_auditor = User.make(guid: 'org_auditor-guid')
-        org_billing_manager = User.make(guid: 'org_billing_manager-guid')
+        user = User.make
+        org_manager = User.make
+        org_auditor = User.make
+        org_billing_manager = User.make
 
         user_organization.add_user(user)
         manager_organization.add_manager(org_manager)
         auditor_organization.add_auditor(org_auditor)
         billing_manager_organization.add_billing_manager(org_billing_manager)
 
-        user_result = user.visible_users_in_my_orgs.all.map(&:guid)
-        expect(user_result).to match_array(
-          [
-            user.guid,
-            other_user1.guid,
-          ],
-        )
-        manager_result = org_manager.visible_users_in_my_orgs.all.map(&:guid)
+        user_result = user.visible_users_in_my_orgs.all.map(&:id)
+        expect(user_result).to match_array([],)
+        manager_result = org_manager.visible_users_in_my_orgs.all.map(&:id)
         expect(manager_result).to match_array(
           [
-            org_manager.guid,
-            other_user2.guid,
+            org_manager.id,
+            other_user1.id,
+            other_user2.id,
           ],
         )
-        auditor_result = org_auditor.visible_users_in_my_orgs.all.map(&:guid)
+        auditor_result = org_auditor.visible_users_in_my_orgs.all.map(&:id)
         expect(auditor_result).to match_array(
           [
-            org_auditor.guid,
-            other_user3.guid,
+            org_auditor.id,
+            other_user3.id,
           ],
         )
-        billing_manager_result = org_billing_manager.visible_users_in_my_orgs.all.map(&:guid)
+        billing_manager_result = org_billing_manager.visible_users_in_my_orgs.all.map(&:id)
         expect(billing_manager_result).to match_array(
           [
-            org_billing_manager.guid,
-            other_user4.guid
+            org_billing_manager.id,
+            other_user4.id
           ],
         )
       end
     end
-
-    describe '.readable_users_for_current_user' do
-
-      context 'when the actor has global permissions' do
-        it 'returns all users in the foundation' do
-
-        end
-      end
-      context "when the actor does not have global permissions" do
-        # let(:actor) {User.make(guid: 'actor')}
-        #
-        # before do
-        # end
-        it "returns unique users in the actor's orgs and spaces" do
-          # expect(1).to be(1)
-        end
-      end
-    end
-    # describe '#readable_users_for_current_user_with_roles' do
-    #   RoleTypes.ALL_ROLES.each do |role|
-    #     context("as a #{role}") do
-    #     #   current user is a role (which is a org role)
-    #     #
-    #     end
-    #   end
-    # end
   end
 end
