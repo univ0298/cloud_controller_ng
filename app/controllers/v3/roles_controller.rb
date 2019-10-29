@@ -7,26 +7,29 @@ class RolesController < ApplicationController
     message = RoleCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
+    space = nil
+    if message.space_guid
+      space = Space.find(guid: message.space_guid)
+      unprocessable_space! unless space
+      org = space.organization
+
+      unprocessable_space! if permission_queryer.can_read_from_org?(org.guid) &&
+        !permission_queryer.can_read_from_space?(message.space_guid, org.guid)
+
+      unauthorized! unless permission_queryer.can_update_space?(message.space_guid, org.guid)
+    else
+      org = Organization.find(guid: message.organization_guid)
+      unprocessable_organization! unless org
+      unauthorized! unless permission_queryer.can_write_to_org?(message.organization_guid)
+    end
+
     user_guid = message.user_guid || guid_for_uaa_user(message.user_name, message.user_origin)
     user = readable_users.first(guid: user_guid)
     unprocessable_user! unless user
 
     role = if message.space_guid
-             space = Space.find(guid: message.space_guid)
-             unprocessable_space! unless space
-             org = space.organization
-
-             unprocessable_space! if permission_queryer.can_read_from_org?(org.guid) &&
-               !permission_queryer.can_read_from_space?(message.space_guid, org.guid)
-
-             unauthorized! unless permission_queryer.can_update_space?(message.space_guid, org.guid)
-
              RoleCreate.create_space_role(type: message.type, user: user, space: space)
            else
-             org = Organization.find(guid: message.organization_guid)
-             unprocessable_organization! unless org
-             unauthorized! unless permission_queryer.can_write_to_org?(message.organization_guid)
-
              RoleCreate.create_organization_role(type: message.type, user: user, organization: org)
            end
 

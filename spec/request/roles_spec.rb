@@ -2,8 +2,7 @@ require 'spec_helper'
 require 'request_spec_shared_examples'
 
 RSpec.describe 'Roles Request' do
-  # let(:user) { VCAP::CloudController::User.make(guid: 'user_guid') }
-  let(:user) { nil }
+  let(:user) { VCAP::CloudController::User.make(guid: 'user_guid') }
   let(:admin_header) { admin_headers_for(user) }
   let(:org) { VCAP::CloudController::Organization.make(guid: 'big-org') }
   let(:space) { VCAP::CloudController::Space.make(guid: 'big-space', organization: org) }
@@ -198,6 +197,10 @@ RSpec.describe 'Roles Request' do
           response_object: expected_response
         }
         h
+      end
+
+      before do
+        org.add_user(user_with_role)
       end
 
       it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
