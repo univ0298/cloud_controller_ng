@@ -490,8 +490,6 @@ module VCAP::CloudController
       end
 
       it "omits orgs that the user isn't a member of" do
-        outside_organization = Organization.make
-
         ids = user.membership_organizations.all.map(&:id)
         expect(ids).to match_array([
           user_organization,

@@ -138,12 +138,10 @@ RSpec.describe 'Users Request' do
         it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
       end
 
-      context 'when the actee has a space role' do
-        let(:actee_with_space_role) { actee }
-
+      context 'when the actee has an org or space role' do
         before do
-          org.add_user(actee_with_space_role)
-          space.add_developer(actee_with_space_role)
+          org.add_user(actee)
+          space.add_developer(actee)
         end
 
         let(:api_call) { lambda { |user_headers| get '/v3/users', nil, user_headers } }
@@ -151,29 +149,11 @@ RSpec.describe 'Users Request' do
         let(:expected_codes_and_responses) do
           h = Hash.new(
             code: 200,
-            response_objects: [actee_json, current_user_json]
+            response_objects: [
+              actee_json,
+              current_user_json
+            ]
           )
-
-          h['org_auditor'] = {
-            code: 200,
-            response_objects: [
-              actee_json,
-              current_user_json
-            ]
-          }
-          h['org_billing_manager'] = {
-            code: 200,
-            response_objects: [
-              actee_json,
-              current_user_json
-            ]
-          }
-          h['no_role'] = {
-            code: 200,
-            response_objects: [
-              current_user_json
-            ]
-          }
           h['admin'] = {
             code: 200,
             response_objects: [
@@ -198,6 +178,12 @@ RSpec.describe 'Users Request' do
               current_user_json
             ]
           }
+          h['no_role'] = {
+            code: 200,
+            response_objects: [
+              current_user_json
+            ]
+          }
           h.freeze
         end
 
@@ -205,8 +191,8 @@ RSpec.describe 'Users Request' do
       end
     end
 
-    context 'with filters' do
-      describe 'when filtering by guid' do
+    describe 'with filters' do
+      context 'when filtering by guid' do
         let(:endpoint) { "/v3/users?guids=#{user.guid}" }
         let(:api_call) { lambda { |user_headers| get endpoint, nil, user_headers } }
 
@@ -223,7 +209,7 @@ RSpec.describe 'Users Request' do
         it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
       end
 
-      describe 'labels' do
+      context 'when filtering by labels' do
         let!(:user_label) { VCAP::CloudController::UserLabelModel.make(resource_guid: user.guid, key_name: 'animal', value: 'dog') }
 
         let!(:actee_label) { VCAP::CloudController::UserLabelModel.make(resource_guid: actee.guid, key_name: 'animal', value: 'cow') }
@@ -249,7 +235,7 @@ RSpec.describe 'Users Request' do
       end
     end
 
-    describe 'when the user is not logged in' do
+    context 'when the user is not logged in' do
       it 'returns 401 for Unauthenticated requests' do
         get '/v3/users', nil, base_json_headers
         expect(last_response.status).to eq(401)
@@ -278,36 +264,58 @@ RSpec.describe 'Users Request' do
       }
     end
 
-    let(:expected_codes_and_responses) do
-      h = Hash.new(
-        code: 404,
-        response_objects: []
-      )
-      h['admin'] = {
-        code: 200,
-        response_object: client_json
-      }
-      h['admin_read_only'] = {
-        code: 200,
-        response_object: client_json
-      }
-      h['global_auditor'] = {
-        code: 200,
-        response_object: client_json
-      }
-      h.freeze
+    context 'when the actee is not in an org or space' do
+      let(:expected_codes_and_responses) do
+        h = Hash.new(
+          code: 404,
+          response_objects: []
+        )
+        h['admin'] = {
+          code: 200,
+          response_object: client_json
+        }
+        h['admin_read_only'] = {
+          code: 200,
+          response_object: client_json
+        }
+        h['global_auditor'] = {
+          code: 200,
+          response_object: client_json
+        }
+        h.freeze
+      end
+
+      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
     end
 
-    it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+    context 'when the actee has an org or space role' do
+      let(:expected_codes_and_responses) do
+        h = Hash.new(
+          code: 200,
+          response_object: client_json
+        )
+        h['no_role'] = {
+          code: 404,
+          response_object: []
+        }
+        h.freeze
+      end
 
-    describe 'when the user is not logged in' do
+      before do
+        org.add_user(actee)
+      end
+
+      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+    end
+
+    context 'when the user is not logged in' do
       it 'returns 401 for Unauthenticated requests' do
         get "/v3/users/#{user.guid}", nil, base_json_headers
         expect(last_response.status).to eq(401)
       end
     end
 
-    describe 'when the user is logged in' do
+    context 'when the user is logged in' do
       let(:user_header) { headers_for(user, scopes: %w(cloud_controller.read)) }
 
       before do
@@ -320,7 +328,7 @@ RSpec.describe 'Users Request' do
         expect(parsed_response).to include('guid' => user.guid)
       end
 
-      describe 'when the user is not found' do
+      context 'when the user is not found' do
         it 'returns 404' do
           get '/v3/users/unknown-user', nil, admin_headers
           expect(last_response.status).to eq(404)
@@ -604,20 +612,24 @@ RSpec.describe 'Users Request' do
 
   describe 'PATCH /v3/users/:guid' do
     describe 'metadata' do
-      let(:api_call) { lambda { |user_headers| patch "/v3/users/#{actee.guid}", {
-        metadata: {
-          labels: {
-            'potato': 'yam',
-            'style': 'casserole',
-          },
-          annotations: {
-            'potato': 'russet',
-            'style': 'french',
-          }
+      let(:api_call) do
+        lambda {
+          |user_headers| patch "/v3/users/#{actee.guid}",
+          {
+            metadata: {
+              labels: {
+                'potato': 'yam',
+                'style': 'casserole',
+              },
+              annotations: {
+                'potato': 'russet',
+                'style': 'french',
+              }
+            }
+          }.to_json,
+          user_headers
         }
-      }.to_json, user_headers
-      }
-      }
+      end
 
       let(:client_json) do
         {
@@ -643,26 +655,50 @@ RSpec.describe 'Users Request' do
         }
       end
 
-      let(:expected_codes_and_responses) do
-        h = Hash.new(
-          code: 404,
-          response_objects: []
-        )
-        h['admin'] = {
-          code: 200,
-          response_object: client_json
-        }
-        h['admin_read_only'] = {
-          code: 403,
-          response_object: client_json
-        }
-        h['global_auditor'] = {
-          code: 403,
-        }
-        h.freeze
+      context 'when the actee is not associated with any org or space' do
+        let(:expected_codes_and_responses) do
+          h = Hash.new(
+            code: 404,
+            response_objects: []
+          )
+          h['admin'] = {
+            code: 200,
+            response_object: client_json
+          }
+          h['admin_read_only'] = {
+            code: 403,
+            response_object: client_json
+          }
+          h['global_auditor'] = {
+            code: 403,
+          }
+          h.freeze
+        end
+
+        it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
       end
 
-      it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+      context 'when the actee has an org or space role' do
+        let(:expected_codes_and_responses) do
+          h = Hash.new(
+            code: 403,
+          )
+          h['admin'] = {
+            code: 200,
+            response_object: client_json
+          }
+          h['no_role'] = {
+            code: 404
+          }
+          h.freeze
+        end
+
+        before do
+          org.add_user(actee)
+        end
+
+        it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+      end
 
       context 'when metadata is invalid' do
         it 'returns a 422' do
@@ -694,14 +730,12 @@ RSpec.describe 'Users Request' do
       end
     end
 
-    context 'when the user is a member in the routes org' do
+    context 'when the actee is not associated with any org or space' do
       let(:expected_codes_and_responses) do
         h = Hash.new(code: 404)
 
         h['admin_read_only'] = { code: 403 }
         h['global_auditor'] = { code: 403 }
-        h['no_role'] = { code: 404 }
-
         h['admin'] = { code: 202 }
         h
       end
@@ -709,15 +743,30 @@ RSpec.describe 'Users Request' do
       it_behaves_like 'permissions for delete endpoint', ALL_PERMISSIONS
     end
 
-    describe 'when the user is not logged in' do
+    context 'when the actee has an org or space role' do
+      before do
+        org.add_user(user_to_delete)
+      end
+
+      let(:expected_codes_and_responses) do
+        h = Hash.new(code: 403)
+        h['admin'] = { code: 202 }
+        h['no_role'] = { code: 404 }
+        h
+      end
+
+      it_behaves_like 'permissions for delete endpoint', ALL_PERMISSIONS
+    end
+
+    context 'when the user is not logged in' do
       it 'returns 401 for Unauthenticated requests' do
         delete "/v3/users/#{user_to_delete.guid}", nil, base_json_headers
         expect(last_response.status).to eq(401)
       end
     end
 
-    describe 'when the user is logged in' do
-      describe 'when the current non-admin user tries to delete themselves' do
+    context 'when the user is logged in' do
+      context 'when the current non-admin user tries to delete themselves' do
         let(:user_header) { headers_for(user_to_delete, scopes: %w(cloud_controller.write)) }
         before do
           set_current_user_as_role(role: 'space_developer', org: org, space: space, user: user_to_delete)
@@ -729,7 +778,7 @@ RSpec.describe 'Users Request' do
         end
       end
 
-      describe 'when the user is admin_read_only and has cloud_controller.write scope' do
+      context 'when the user is admin_read_only and has cloud_controller.write scope' do
         let(:user_header) { headers_for(user, scopes: %w(cloud_controller.admin_read_only cloud_controller.write)) }
 
         it 'returns 403' do
@@ -738,7 +787,7 @@ RSpec.describe 'Users Request' do
         end
       end
 
-      describe 'when the user is not found' do
+      context 'when the user is not found' do
         let(:user_header) { headers_for(user_to_delete, scopes: %w(cloud_controller.write)) }
 
         before do

@@ -7,7 +7,6 @@ class RolesController < ApplicationController
     message = RoleCreateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
 
-    space = nil
     if message.space_guid
       space = Space.find(guid: message.space_guid)
       unprocessable_space! unless space
@@ -17,21 +16,19 @@ class RolesController < ApplicationController
         !permission_queryer.can_read_from_space?(message.space_guid, org.guid)
 
       unauthorized! unless permission_queryer.can_update_space?(message.space_guid, org.guid)
+      user = fetch_user(message)
+      unprocessable_user! unless user
+
+      role = RoleCreate.create_space_role(type: message.type, user: user, space: space)
     else
       org = Organization.find(guid: message.organization_guid)
       unprocessable_organization! unless org
       unauthorized! unless permission_queryer.can_write_to_org?(message.organization_guid)
+      user = fetch_user(message)
+      unprocessable_user! unless user
+
+      role = RoleCreate.create_organization_role(type: message.type, user: user, organization: org)
     end
-
-    user_guid = message.user_guid || guid_for_uaa_user(message.user_name, message.user_origin)
-    user = readable_users.first(guid: user_guid)
-    unprocessable_user! unless user
-
-    role = if message.space_guid
-             RoleCreate.create_space_role(type: message.type, user: user, space: space)
-           else
-             RoleCreate.create_organization_role(type: message.type, user: user, organization: org)
-           end
 
     render status: :created, json: Presenters::V3::RolePresenter.new(role)
   rescue RoleCreate::Error => e
@@ -39,6 +36,11 @@ class RolesController < ApplicationController
   end
 
   private
+
+  def fetch_user(message)
+    user_guid = message.user_guid || guid_for_uaa_user(message.user_name, message.user_origin)
+    readable_users.first(guid: user_guid)
+  end
 
   def readable_users
     User.readable_users_for_current_user(permission_queryer.can_read_secrets_globally?, current_user)
