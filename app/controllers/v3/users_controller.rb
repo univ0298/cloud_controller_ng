@@ -38,7 +38,7 @@ class UsersController < ApplicationController
 
   def show
     user = User.readable_users_for_current_user(
-      permission_queryer.can_read_secrets_globally?,
+      permission_queryer.can_read_globally?,
       current_user
     ).first(guid: hashed_params[:guid])
 
@@ -83,7 +83,7 @@ class UsersController < ApplicationController
   private
 
   def fetch_readable_users(message)
-    admin_roles = permission_queryer.can_read_secrets_globally?
+    admin_roles = permission_queryer.can_read_globally?
     UserListFetcher.fetch_all(message, User.readable_users_for_current_user(admin_roles, current_user))
   end
 

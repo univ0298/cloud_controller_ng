@@ -1,6 +1,6 @@
 module VCAP::CloudController
   class User < Sequel::Model
-    class InvalidOrganizationRelation < CloudController::Errors::InvalidRelation;
+    class InvalidOrganizationRelation < CloudController::Errors::InvalidRelation
     end
     attr_accessor :username, :organization_roles, :space_roles, :origin
 
@@ -195,13 +195,13 @@ module VCAP::CloudController
     def visible_users_in_my_orgs
       visible_users = User.join(
         :organizations_users, user_id: :id).
-        where(organization_id: membership_organizations).
-        union(
-          User.join(:organizations_auditors, user_id: :id).where(organization_id: membership_organizations)).
-        union(
-          User.join(:organizations_managers, user_id: :id).where(organization_id: membership_organizations)).
-        union(
-          User.join(:organizations_billing_managers, user_id: :id).where(organization_id: membership_organizations)
+                      where(organization_id: membership_organizations).
+                      union(
+                        User.join(:organizations_auditors, user_id: :id).where(organization_id: membership_organizations)).
+                      union(
+                        User.join(:organizations_managers, user_id: :id).where(organization_id: membership_organizations)).
+                      union(
+                        User.join(:organizations_billing_managers, user_id: :id).where(organization_id: membership_organizations)
         )
       visible_users.select(:id).distinct
     end
@@ -210,8 +210,7 @@ module VCAP::CloudController
       if can_read_secrets_globally
         User.dataset
       else
-        readable_users = current_user.visible_users_in_my_orgs
-        readable_users.union(User.where(id: current_user.id).select(:id))
+        readable_users = current_user.visible_users_in_my_orgs.union(User.where(id: current_user.id).select(:id))
         User.where(id: readable_users)
       end
     end

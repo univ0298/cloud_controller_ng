@@ -2,14 +2,14 @@ require 'spec_helper'
 require 'request_spec_shared_examples'
 
 RSpec.describe 'Users Request' do
-  let(:actee) { VCAP::CloudController::User.make(guid: 'actee-guid') }
+  let(:actee) { VCAP::CloudController::User.make(guid: actee_guid) }
   let(:user) { VCAP::CloudController::User.make(guid: 'user') }
   let(:client) { VCAP::CloudController::User.make(guid: 'client-user') }
   let(:space) { VCAP::CloudController::Space.make }
   let(:org) { space.organization }
   let(:admin_header) { headers_for(user, scopes: %w(cloud_controller.admin)) }
   let(:uaa_client) { instance_double(VCAP::CloudController::UaaClient) }
-  let(:actee_guid) { actee.guid }
+  let(:actee_guid) { 'actee-guid' }
 
   before do
     VCAP::CloudController::User.dataset.destroy # this will clean up the seeded test users
@@ -39,6 +39,7 @@ RSpec.describe 'Users Request' do
         actee.guid => { 'username' => 'lola', 'origin' => 'uaa' },
       }
     )
+    allow(uaa_client).to receive(:users_for_ids).with([]).and_return({})
   end
 
   describe 'GET /v3/users' do
@@ -100,7 +101,6 @@ RSpec.describe 'Users Request' do
       let(:api_call) { lambda { |user_headers| get '/v3/users', nil, user_headers } }
 
       context 'when there are no other users in your space or org' do
-
         let(:expected_codes_and_responses) do
           h = Hash.new(
             code: 200,
@@ -146,7 +146,7 @@ RSpec.describe 'Users Request' do
           space.add_developer(actee_with_space_role)
         end
 
-        let(:api_call) { lambda { |user_headers| get "/v3/users", nil, user_headers } }
+        let(:api_call) { lambda { |user_headers| get '/v3/users', nil, user_headers } }
 
         let(:expected_codes_and_responses) do
           h = Hash.new(
@@ -157,12 +157,14 @@ RSpec.describe 'Users Request' do
           h['org_auditor'] = {
             code: 200,
             response_objects: [
+              actee_json,
               current_user_json
             ]
           }
           h['org_billing_manager'] = {
             code: 200,
             response_objects: [
+              actee_json,
               current_user_json
             ]
           }
@@ -201,7 +203,6 @@ RSpec.describe 'Users Request' do
 
         it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
       end
-
     end
 
     context 'with filters' do
@@ -216,10 +217,6 @@ RSpec.describe 'Users Request' do
               current_user_json
             ]
           )
-          h['no_role'] = {
-            code: 200,
-            response_objects: []
-          }
           h.freeze
         end
 
@@ -336,22 +333,30 @@ RSpec.describe 'Users Request' do
   describe 'POST /v3/users' do
     let(:params) do
       {
-        guid: actee_guid,
+        guid: 'new-user-guid',
       }
     end
 
     describe 'metadata' do
       before do
-        allow(uaa_client).to receive(:users_for_ids).and_return({})
+        allow(uaa_client).to receive(:users_for_ids).with(['new-user-guid']).and_return(
+          {
+            'new-user-guid' => {
+              'username' => 'my-new-user',
+              'origin' => 'uaa',
+            }
+          }
+        )
       end
+
       let(:user_json) do
         {
           guid: params[:guid],
           created_at: iso8601,
           updated_at: iso8601,
-          username: nil,
-          presentation_name: params[:guid],
-          origin: nil,
+          username: 'my-new-user',
+          presentation_name: 'my-new-user',
+          origin: 'uaa',
           metadata: {
             labels: {
               'potato': 'yam',
@@ -447,7 +452,14 @@ RSpec.describe 'Users Request' do
     describe 'when creating a user that exists in uaa' do
       context "it's a UAA user" do
         before do
-          allow(uaa_client).to receive(:users_for_ids).and_return({ actee_guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' } })
+          allow(uaa_client).to receive(:users_for_ids).with(['new-user-guid']).and_return(
+            {
+              'new-user-guid' => {
+                'username' => 'my-new-user',
+                'origin' => 'uaa',
+              }
+            }
+          )
         end
 
         let(:api_call) { lambda { |user_headers| post '/v3/users', params.to_json, user_headers } }
@@ -457,9 +469,9 @@ RSpec.describe 'Users Request' do
             guid: params[:guid],
             created_at: iso8601,
             updated_at: iso8601,
-            username: 'bob-mcjames',
-            presentation_name: 'bob-mcjames',
-            origin: 'Okta',
+            username: 'my-new-user',
+            presentation_name: 'my-new-user',
+            origin: 'uaa',
             metadata: {
               labels: {},
               annotations: {}
@@ -483,6 +495,7 @@ RSpec.describe 'Users Request' do
 
         it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
       end
+
       context "it's a UAA client" do
         let(:params) do
           {
@@ -530,6 +543,7 @@ RSpec.describe 'Users Request' do
         it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
       end
     end
+
     describe 'when the user is not logged in' do
       it 'returns 401 for Unauthenticated requests' do
         post '/v3/users', params.to_json, base_json_headers
@@ -624,7 +638,7 @@ RSpec.describe 'Users Request' do
             }
           },
           links: {
-            self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{other_user.guid}) },
+            self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{actee.guid}) },
           }
         }
       end
@@ -643,8 +657,7 @@ RSpec.describe 'Users Request' do
           response_object: client_json
         }
         h['global_auditor'] = {
-          code: 404,
-          scopes: %w(cloud_controller.write),
+          code: 403,
         }
         h.freeze
       end
