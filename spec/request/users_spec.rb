@@ -209,6 +209,55 @@ RSpec.describe 'Users Request' do
         it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
       end
 
+      context 'when filtering by usernames and origins' do
+        let(:user_in_different_origin) { VCAP::CloudController::User.make(guid: 'user_in_different_origin') }
+        let(:user_with_different_username) { VCAP::CloudController::User.make(guid: 'user_in_different_origin') }
+        let(:endpoint) { '/v3/users?usernames=bob-mcjames&origins=Okta' }
+        let(:api_call) { lambda { |user_headers| get endpoint, nil, user_headers } }
+        let(:user_in_different_origin_json) do
+          {
+            guid: user_in_different_origin.guid,
+            created_at: iso8601,
+            updated_at: iso8601,
+            username: 'bob-mcjames',
+            presentation_name: 'bob-mcjames',
+            origin: 'uaa',
+            metadata: {
+              labels: {},
+              annotations: {}
+            },
+            links: {
+              self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/users\/#{user.guid}) },
+            }
+          }
+        end
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(
+            code: 200,
+            response_objects: [
+              current_user_json,
+            ]
+          )
+          h.freeze
+        end
+
+        before do
+          org.add_user(user_in_different_origin)
+          space.add_developer(user_in_different_origin)
+          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(contain_exactly('bob-mcjames'), nil).and_return([user.guid, user_in_different_origin.guid])
+          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(nil, contain_exactly('Okta')).and_return([user.guid])
+          allow(uaa_client).to receive(:users_for_ids).with(contain_exactly('user', 'user_in_different_origin')).and_return(
+            {
+              user.guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' },
+              user_in_different_origin.guid => { 'username' => 'bob-mcjames', 'origin' => 'uaa' },
+            }
+          )
+        end
+
+        it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
+      end
+
       context 'when filtering by labels' do
         let!(:user_label) { VCAP::CloudController::UserLabelModel.make(resource_guid: user.guid, key_name: 'animal', value: 'dog') }
 

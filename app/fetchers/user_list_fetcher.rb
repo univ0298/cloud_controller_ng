@@ -15,6 +15,16 @@ module VCAP::CloudController
           dataset = dataset.where(guid: message.guids)
         end
 
+        if message.requested?(:usernames)
+          guids = uaa_client.ids_for_usernames_and_origins(message.usernames, nil)
+          dataset = dataset.where(guid: guids)
+        end
+
+        if message.requested?(:origins)
+          guids = uaa_client.ids_for_usernames_and_origins(nil, message.origins)
+          dataset = dataset.where(guid: guids)
+        end
+
         if message.requested?(:label_selector)
           dataset = LabelSelectorQueryGenerator.add_selector_queries(
             label_klass: UserLabelModel,
@@ -25,6 +35,10 @@ module VCAP::CloudController
         end
 
         dataset
+      end
+
+      def uaa_client
+        CloudController::DependencyLocator.instance.uaa_client
       end
     end
   end
