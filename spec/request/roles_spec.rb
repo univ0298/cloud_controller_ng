@@ -731,7 +731,7 @@ RSpec.describe 'Roles Request' do
       )
     end
 
-    let(:space_response_object) do
+    let(:space_auditor_response_object) do
       {
         guid: space_auditor.guid,
         created_at: iso8601,
@@ -756,7 +756,7 @@ RSpec.describe 'Roles Request' do
       }
     end
 
-    let(:org_response_object) do
+    let(:org_auditor_response_object) do
       {
         guid: organization_auditor.guid,
         created_at: iso8601,
@@ -832,13 +832,13 @@ RSpec.describe 'Roles Request' do
     end
 
     context 'listing all roles' do
-      let(:expected_codes_and_responses) do
-        h = Hash.new(code: 200, response_objects: [space_response_object, org_response_object])
+        let(:expected_codes_and_responses) do
+        h = Hash.new(code: 200, response_objects: [space_auditor_response_object, org_auditor_response_object])
 
         h['org_auditor'] = {
           code: 200,
           response_objects: contain_exactly(
-            org_response_object,
+            org_auditor_response_object,
             make_org_role_for_current_user('organization_user'),
             make_org_role_for_current_user('organization_auditor')
           )
@@ -847,8 +847,8 @@ RSpec.describe 'Roles Request' do
         h['org_manager'] = {
           code: 200,
           response_objects: contain_exactly(
-            space_response_object,
-            org_response_object,
+            space_auditor_response_object,
+            org_auditor_response_object,
             make_org_role_for_current_user('organization_user'),
             make_org_role_for_current_user('organization_manager')
           )
@@ -857,7 +857,7 @@ RSpec.describe 'Roles Request' do
         h['org_billing_manager'] = {
           code: 200,
           response_objects: contain_exactly(
-            org_response_object,
+            org_auditor_response_object,
             make_org_role_for_current_user('organization_user'),
             make_org_role_for_current_user('organization_billing_manager')
           )
@@ -866,8 +866,8 @@ RSpec.describe 'Roles Request' do
         h['space_manager'] = {
           code: 200,
           response_objects: contain_exactly(
-            space_response_object,
-            org_response_object,
+            space_auditor_response_object,
+            org_auditor_response_object,
             make_org_role_for_current_user('organization_user'),
             make_space_role_for_current_user('space_manager')
           )
@@ -876,8 +876,8 @@ RSpec.describe 'Roles Request' do
         h['space_auditor'] = {
           code: 200,
           response_objects: contain_exactly(
-            space_response_object,
-            org_response_object,
+            space_auditor_response_object,
+            org_auditor_response_object,
             make_org_role_for_current_user('organization_user'),
             make_space_role_for_current_user('space_auditor')
           )
@@ -886,8 +886,8 @@ RSpec.describe 'Roles Request' do
         h['space_developer'] = {
           code: 200,
           response_objects: contain_exactly(
-            space_response_object,
-            org_response_object,
+            space_auditor_response_object,
+            org_auditor_response_object,
             make_org_role_for_current_user('organization_user'),
             make_space_role_for_current_user('space_developer')
           )
@@ -911,17 +911,17 @@ RSpec.describe 'Roles Request' do
       let(:api_call) { lambda { |user_headers| get "/v3/roles?user_guids=#{other_user.guid}&order_by=-created_at", nil, user_headers } }
 
       let(:expected_codes_and_responses) do
-        h = Hash.new(code: 200, response_objects: [org_response_object, space_response_object])
+        h = Hash.new(code: 200, response_objects: [org_auditor_response_object, space_auditor_response_object])
         h['org_auditor'] = {
           code: 200,
           response_objects: contain_exactly(
-            org_response_object,
+            org_auditor_response_object,
           )
         }
         h['org_billing_manager'] = {
           code: 200,
           response_objects: contain_exactly(
-            org_response_object,
+            org_auditor_response_object,
           )
         }
         h['no_role'] = { code: 200, response_objects: [] }
@@ -938,7 +938,7 @@ RSpec.describe 'Roles Request' do
           'created_at' => iso8601,
           'updated_at' => iso8601,
           'username' => 'other_user_name',
-          'presentation_name' => 'other_user_name', # username is nil, so presenter defaults to guid
+          'presentation_name' => 'other_user_name',
           'origin' => 'uaa',
           'metadata' => {
             'labels' => {},
@@ -950,6 +950,43 @@ RSpec.describe 'Roles Request' do
         }
       end
 
+      let(:org_response_object) do
+        {
+          'guid' => org.guid,
+          'created_at' => iso8601,
+          'updated_at' => iso8601,
+          'name' => org.name,
+          'metadata' => {
+            'labels' => {},
+            'annotations' => {},
+          },
+          'links' => {
+            'self' => { 'href' => %r(#{Regexp.escape(link_prefix)}\/v3\/organization\/#{org.guid}) },
+          }
+        }
+      end
+
+      let(:space_response_object) do
+        {
+          'guid' => space.guid,
+          'created_at' => iso8601,
+          'updated_at' => iso8601,
+          'name' => space.name,
+          'relationships' => {
+              'data' => {
+                'organization' => org.guid
+              } 
+          }
+          'metadata' => {
+            'labels' => {},
+            'annotations' => {},
+          },
+          'links' => {
+            'self' => { 'href' => %r(#{Regexp.escape(link_prefix)}\/v3\/space\/#{space.guid}) },
+          }
+        }
+      end
+
       before do
         allow(uaa_client).to receive(:users_for_ids).with([other_user.guid]).and_return(
           { other_user.guid => { 'username' => 'other_user_name', 'origin' => 'uaa' } }
@@ -957,14 +994,16 @@ RSpec.describe 'Roles Request' do
       end
 
       it 'includes the requested users' do
-        get('/v3/roles?include=user', nil, admin_header)
+        get('/v3/roles?include=user,organization,space', nil, admin_header)
         expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response['included']['users'][0]).to be_a_response_like(other_user_response)
+        expect(parsed_response['included']['organizations'][0]).to be_a_response_like(org_response_object)
+        expect(parsed_response['included']['spaces'][0]).to be_a_response_like(space_response_object)
       end
 
-      context 'when there are multiple users with multiple roles' do
+      context 'when there are multiple users with multiple roles' do #TODO: fill in included for multiple orgs/spaces
         let(:another_user) { VCAP::CloudController::User.make(guid: 'another-user-guid') }
         let(:another_user_response) do
           {
@@ -1003,7 +1042,7 @@ RSpec.describe 'Roles Request' do
         end
 
         it 'returns all of the relevant users' do
-          get('/v3/roles?include=user', nil, admin_header)
+          get('/v3/roles?include=user,organization', nil, admin_header)
           expect(last_response).to have_status_code(200)
 
           parsed_response = MultiJson.load(last_response.body)
@@ -1114,15 +1153,15 @@ RSpec.describe 'Roles Request' do
       end
     end
 
-    context 'listing roles with include' do
-      let(:role) { VCAP::CloudController::SpaceAuditor.make(user: user_with_role, space: space) }
+    context 'getting a role with included resources' do
+      let(:org_role) { VCAP::CloudController::OrganizationAuditor.make(user: user_with_role, organization: org) }
       let(:user_with_role_response) do
         {
           'guid' => user_with_role.guid,
           'created_at' => iso8601,
           'updated_at' => iso8601,
           'username' => 'user_name',
-          'presentation_name' => 'user_name', # username is nil, so presenter defaults to guid
+          'presentation_name' => 'user_name',
           'origin' => 'uaa',
           'metadata' => {
             'labels' => {},
@@ -1134,18 +1173,58 @@ RSpec.describe 'Roles Request' do
         }
       end
 
+      let(:org_response_object) do
+        {
+          'guid' => org.guid,
+          'created_at' => iso8601,
+          'updated_at' => iso8601,
+          'name' => org.name,
+          'metadata' => {
+            'labels' => {},
+            'annotations' => {},
+          },
+          'links' => {
+            'self' => { 'href' => %r(#{Regexp.escape(link_prefix)}\/v3\/organization\/#{org.guid}) },
+          }
+        }
+      end
+      
+      let(:space_response_object) do
+        {
+          'guid' => space.guid,
+          'created_at' => iso8601,
+          'updated_at' => iso8601,
+          'name' => space.name,
+          'relationships' => {
+              'data' => {
+                'organization' => org.guid
+              } 
+          }
+          'metadata' => {
+            'labels' => {},
+            'annotations' => {},
+          },
+          'links' => {
+            'self' => { 'href' => %r(#{Regexp.escape(link_prefix)}\/v3\/space\/#{space.guid}) },
+          }
+        }
+      end
+
+
       before do
         allow(uaa_client).to receive(:users_for_ids).with([user_with_role.guid]).and_return(
           { user_with_role.guid => { 'username' => 'user_name', 'origin' => 'uaa' } }
         )
       end
 
-      it 'includes the requested users' do
-        get("/v3/roles/#{role.guid}?include=user", nil, admin_header)
+      it 'includes the requested users and organizations' do
+        get("/v3/roles/#{org_role.guid}?include=user,space,organization", nil, admin_header)
         expect(last_response).to have_status_code(200)
 
         parsed_response = MultiJson.load(last_response.body)
         expect(parsed_response['included']['users'][0]).to be_a_response_like(user_with_role_response)
+        expect(parsed_response['included']['organizations'][0]).to be_a_response_like(org_response_object)
+        expect(parsed_response['included']['space'][0]).to be_a_response_like(space_response_object)
       end
     end
   end
