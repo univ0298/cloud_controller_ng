@@ -245,8 +245,7 @@ RSpec.describe 'Users Request' do
         before do
           org.add_user(user_in_different_origin)
           space.add_developer(user_in_different_origin)
-          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(contain_exactly('bob-mcjames'), nil).and_return([user.guid, user_in_different_origin.guid])
-          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(nil, contain_exactly('Okta')).and_return([user.guid])
+          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(['bob-mcjames'], ['Okta']).and_return([user.guid])
           allow(uaa_client).to receive(:users_for_ids).with(contain_exactly('user', 'user_in_different_origin')).and_return(
             {
               user.guid => { 'username' => 'bob-mcjames', 'origin' => 'Okta' },

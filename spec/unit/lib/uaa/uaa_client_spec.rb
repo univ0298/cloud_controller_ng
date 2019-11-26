@@ -488,30 +488,6 @@ module VCAP::CloudController
         end
       end
 
-      context 'with origins but no usernames' do
-        it 'returns the ids for the origins' do
-          response_body = {
-            'resources' => [
-              { 'id' => '123', 'origin' => 'uaa', 'username' => username1 },
-              { 'id' => '456', 'origin' => 'Okta', 'username' => username1 },
-              { 'id' => '789', 'origin' => 'Okta', 'username' => username2 },
-            ],
-            'schemas' => ['urn:scim:schemas:core:1.0'],
-            'startindex' => 1,
-            'itemsperpage' => 100,
-            'totalresults' => 1 }
-
-          WebMock::API.stub_request(:get, "#{url}/ids/Users"). # 'id eq "111" or id eq "222"'
-            with(query: { 'includeInactive' => true, 'filter' => 'origin eq "uaa" or origin eq "Okta"' }).
-            to_return(
-              status: 200,
-              headers: { 'content-type' => 'application/json' },
-              body: response_body.to_json)
-
-          expect(uaa_client.ids_for_usernames_and_origins(nil, ['uaa', 'Okta'])).to eq(%w(123 456 789))
-        end
-      end
-
       context 'with usernames and origins' do
         it 'returns the intersection of the usernames and the origins' do
           response_body = {
@@ -531,7 +507,7 @@ module VCAP::CloudController
               headers: { 'content-type' => 'application/json' },
               body: response_body.to_json)
 
-          expect(uaa_client.ids_for_usernames_and_origins([username1, username2], ['Okta'])).to eq(%w(456 789))
+          uaa_client.ids_for_usernames_and_origins([username1, username2], ['Okta'])
         end
       end
 

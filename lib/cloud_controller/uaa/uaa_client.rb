@@ -62,6 +62,7 @@ module VCAP::CloudController
       raise UaaEndpointDisabled
     end
 
+
     def ids_for_usernames_and_origins(usernames, origins)
       username_filter_string = usernames&.map { |u| "username eq \"#{u}\"" }&.join(' or ')
       origin_filter_string = origins&.map { |o| "origin eq \"#{o}\"" }&.join(' or ')
@@ -70,6 +71,22 @@ module VCAP::CloudController
 
       if username_filter_string && origin_filter_string
         filter_string = "( #{username_filter_string} ) and ( #{origin_filter_string} )"
+      end
+
+      results = query(:user_id, includeInactive: true, filter: filter_string)
+
+      results['resources'].map { |r| r['id'] }
+    rescue CF::UAA::TargetError
+      raise UaaEndpointDisabled
+    end
+
+
+    def old_ids_for_usernames_and_origins(usernames, origins)
+      filter_string = usernames&.map { |u| "username eq \"#{u}\"" }&.join(' or ')
+      origin_filter_string = origins&.map { |o| "origin eq \"#{o}\"" }&.join(' or ')
+
+      if origin_filter_string
+        filter_string = "( #{filter_string} ) and ( #{origin_filter_string} )"
       end
 
       results = query(:user_id, includeInactive: true, filter: filter_string)

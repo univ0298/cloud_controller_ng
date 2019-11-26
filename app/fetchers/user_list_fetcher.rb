@@ -16,12 +16,7 @@ module VCAP::CloudController
         end
 
         if message.requested?(:usernames)
-          guids = uaa_client.ids_for_usernames_and_origins(message.usernames, nil)
-          dataset = dataset.where(guid: guids)
-        end
-
-        if message.requested?(:origins)
-          guids = uaa_client.ids_for_usernames_and_origins(nil, message.origins)
+          guids = uaa_client.ids_for_usernames_and_origins(message.usernames, message.origins)
           dataset = dataset.where(guid: guids)
         end
 

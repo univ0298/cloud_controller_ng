@@ -32,7 +32,7 @@ module VCAP::CloudController
 
         before do
           allow(VCAP::CloudController::UaaClient).to receive(:new).and_return(uaa_client)
-          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(contain_exactly('user2-username'), nil).and_return([user2.guid])
+          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(['user2-username'], nil).and_return([user2.guid])
         end
 
         it 'returns all of the desired users' do
@@ -40,13 +40,13 @@ module VCAP::CloudController
         end
       end
 
-      context 'when the users are filtered by origin' do
-        let(:filters) { { 'origins' => 'user2-origin' } }
+      context 'when the users are filtered by username and origin' do
+        let(:filters) { { 'usernames' => 'user2-username', 'origins' => 'user2-origin' } }
         let(:uaa_client) { instance_double(VCAP::CloudController::UaaClient) }
 
         before do
           allow(VCAP::CloudController::UaaClient).to receive(:new).and_return(uaa_client)
-          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(nil, contain_exactly('user2-origin')).and_return([user2.guid])
+          allow(uaa_client).to receive(:ids_for_usernames_and_origins).with(['user2-username'], ['user2-origin']).and_return([user2.guid])
         end
 
         it 'returns all of the desired users' do

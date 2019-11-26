@@ -76,6 +76,16 @@ module VCAP::CloudController
       end
     end
 
+    class OriginMustBePairedUserNameValidator < ActiveModel::Validator
+      def validate(record)
+        if record.requested?(:dependent)
+          if !record.requested?(:independent)
+            record.errors[:base] << "Unknown field(s): '#{record.extra_keys.join("', '")}'"
+          else
+        end
+      end
+    end
+
     class NoAdditionalParamsValidator < ActiveModel::Validator
       def validate(record)
         if record.extra_keys.any?
