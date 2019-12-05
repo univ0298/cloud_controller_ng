@@ -17,6 +17,7 @@ RSpec.describe 'Roles Request' do
     allow(uaa_client).to receive(:usernames_for_ids).with([user_with_role.guid]).and_return(
       { user_with_role.guid => 'mona' }
     )
+    # TODO: why is the response mapping to a different user guid?
     allow(uaa_client).to receive(:usernames_for_ids).with([user_unaffiliated.guid]).and_return(
       { user_with_role.guid => 'bob_unaffiliated' }
     )
@@ -704,6 +705,76 @@ RSpec.describe 'Roles Request' do
           end
 
           it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+        end
+      end
+    end
+
+    context 'creating a role for a user that does not exist in CCDB' do
+      context 'by user guid' do
+        let(:params) do
+          {
+            type: 'organization_auditor',
+            relationships: {
+              user: {
+                data: { guid: 'a-new-user-guid' }
+              },
+              organization: {
+                data: { guid: org.guid }
+              }
+            }
+          }
+        end
+
+        before do
+          allow(uaa_client).to receive(:users_for_ids).with(['a-new-user-guid']).and_return(
+            { 'a-new-user-guid' => { 'username' => 'a-new-user-name' } }
+          )
+          allow(uaa_client).to receive(:usernames_for_ids).with(['a-new-user-guid']).and_return(
+            { 'a-new-user-guid' => 'a-new-user-name' }
+          )
+        end
+
+        it 'creates the user and the role' do
+          post '/v3/roles', params.to_json, admin_headers
+
+          expect(last_response).to have_status_code(201)
+
+          # TODO add more assertions here
+          expect(VCAP::CloudController::User.where(guid: 'a-new-user-guid').empty?).to be false
+        end
+      end
+
+      context 'by user name' do
+        let(:params) do
+          {
+            type: 'organization_auditor',
+            relationships: {
+              user: {
+                data: { username: 'a-new-user-name', origin: 'uaa' }
+              },
+              organization: {
+                data: { guid: org.guid }
+              }
+            }
+          }
+        end
+
+        before do
+          allow(uaa_client).to receive(:usernames_for_ids).with(['a-new-user-guid']).and_return(
+            { 'a-new-user-guid' => 'a-new-user-name' }
+          )
+          allow(uaa_client).to receive(:id_for_username).with('a-new-user-name', origin: 'uaa').and_return(
+            'a-new-user-guid'
+          )
+        end
+
+        it 'creates the user and the role' do
+          post '/v3/roles', params.to_json, admin_headers
+
+          expect(last_response).to have_status_code(201)
+
+          # TODO add more assertions here
+          expect(VCAP::CloudController::User.where(guid: 'a-new-user-guid').empty?).to be false
         end
       end
     end
