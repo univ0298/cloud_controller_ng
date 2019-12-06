@@ -93,7 +93,6 @@ class RolesController < ApplicationController
   private
 
   def create_space_role(message)
-    # TODO: consider what changes need to be made for space role creation
     space = Space.find(guid: message.space_guid)
     unprocessable_space! unless space
     org = space.organization
@@ -115,33 +114,15 @@ class RolesController < ApplicationController
     unprocessable_organization! unless org
     unauthorized! unless permission_queryer.can_write_to_org?(message.organization_guid)
 
-    existing_uaa_user_guid = check_user_in_uaa(message)
-
-    # TODO clean all this stuff up
-    user = User.find(guid: existing_uaa_user_guid)
-    if user && !fetch_user(existing_uaa_user_guid)
-      unprocessable_user!
-    elsif !user
-      user = create_cc_user(existing_uaa_user_guid)
+    user_guid_from_uaa = fetch_and_validate_guid(message)
+    user = fetch_user_for_create_org_role(user_guid_from_uaa, message)
+    if !user
+      user_not_in_ccdb = User.where(guid: user_guid_from_uaa).empty?
+      unprocessable_user! unless user_not_in_ccdb
+      user = create_cc_user(user_guid_from_uaa)
     end
 
     RoleCreate.new(message, user_audit_info).create_organization_role(type: message.type, user: user, organization: org)
-  end
-
-  def check_user_in_uaa(message)
-    if message.user_guid
-      uaa_client = CloudController::DependencyLocator.instance.uaa_client
-      unprocessable_user! unless uaa_client.users_for_ids([message.user_guid]).any?
-      message.user_guid
-    else
-      guid_for_uaa_user(message.username, message.user_origin)
-    end
-  end
-
-  def create_cc_user(user_guid)
-    message = UserCreateMessage.new(guid: user_guid)
-    # unprocessable!(message.errors.full_messages) unless message.valid?
-    UserCreate.new.create(message: message)
   end
 
   # Org managers can add unaffiliated users to their org by username
@@ -162,6 +143,21 @@ class RolesController < ApplicationController
     uaa_client = CloudController::DependencyLocator.instance.uaa_client
     UsernamePopulator.new(uaa_client).transform(user)
     user
+  end
+
+  def fetch_and_validate_guid(message)
+    if message.user_guid
+      uaa_client = CloudController::DependencyLocator.instance.uaa_client
+      unprocessable_user! unless uaa_client.users_for_ids([message.user_guid]).any?
+      message.user_guid
+    else
+      guid_for_uaa_user(message.username, message.user_origin)
+    end
+  end
+
+  def create_cc_user(user_guid)
+    message = UserCreateMessage.new(guid: user_guid)
+    UserCreate.new.create(message: message)
   end
 
   def readable_users
@@ -208,12 +204,6 @@ class RolesController < ApplicationController
 
   def unprocessable_space_user!
     unprocessable!("Users cannot be assigned roles in a space if they do not have a role in that space's organization.")
-  end
-
-  def check_uaa_user(user_guid)
-    uaa_client = CloudController::DependencyLocator.instance.uaa_client
-    unprocessable_user! unless uaa_client.users_for_ids([user_guid]).any?
-    user_guid
   end
 
   def guid_for_uaa_user(username, given_origin, creating_space_role: false)
