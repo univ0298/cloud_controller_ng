@@ -5,9 +5,13 @@ module VCAP::CloudController
   class OrganizationQuotasCreateMessage < BaseMessage
     MAX_ORGANIZATION_QUOTA_NAME_LENGTH = 250
 
+    def self.relationships_requested?
+      @relationships_requested ||= proc { |a| a.requested?(:relationships) }
+    end
+
     register_allowed_keys [:name, :total_memory_in_mb, :paid_services_allowed, :total_service_instances, :total_routes, :relationships]
     validates_with NoAdditionalKeysValidator
-    validates_with RelationshipValidator
+    validates_with RelationshipValidator, if: relationships_requested?
 
     validates :name,
       string: true,

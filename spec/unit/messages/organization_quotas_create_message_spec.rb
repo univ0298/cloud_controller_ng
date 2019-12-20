@@ -297,6 +297,16 @@ module VCAP::CloudController
       end
 
       describe 'relationships' do
+        context 'given no organization guids' do
+          let(:params) do
+            {
+              name: 'kris',
+            }
+          end
+
+          it { is_expected.to be_valid }
+        end
+
         context 'given mulitple organization guids' do
           let(:params) do
             {
@@ -315,7 +325,7 @@ module VCAP::CloudController
           it { is_expected.to be_valid }
         end
 
-        context 'given malformed organization guids' do
+        context 'given malformed data array' do
           let(:params) do
             {
               name: 'kourtney',
@@ -327,6 +337,24 @@ module VCAP::CloudController
 
           it { is_expected.to be_invalid }
         end
+
+        context 'given malformed organization guids' do
+          let(:params) do
+            {
+              name: 'rob',
+              relationships: {
+                organizations: {
+                  data: [
+                    { guid: 150000 },
+                  ]
+                }
+              }
+            }
+          end
+
+          it { is_expected.to be_invalid }
+        end
+
       end
     end
   end
