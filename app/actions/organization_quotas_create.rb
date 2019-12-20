@@ -14,6 +14,7 @@ module VCAP::CloudController
           total_routes: message.total_routes || QuotaDefinition::DEFAULT_TOTAL_ROUTES,
         )
       end
+      org_quota.update(organizations: message.organization_guids())
 
       org_quota
     rescue Sequel::ValidationFailed => e

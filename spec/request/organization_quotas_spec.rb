@@ -3,16 +3,23 @@ require 'request_spec_shared_examples'
 
 module VCAP::CloudController
   RSpec.describe 'organization_quotas' do
-    let(:user) { VCAP::CloudController::User.make(guid: 'user') }
-    let(:space) { VCAP::CloudController::Space.make }
-    let(:org) { space.organization }
+    let(:user) { VCAP::CloudController::User.make(guid: 'user-guid') }
+    let(:org) { VCAP::CloudController::Organization.make(guid: 'organization-guid') }
+    let(:space) { VCAP::CloudController::Space.make(guid: 'space-guid', organization: org) }
     let(:admin_header) { headers_for(user, scopes: %w(cloud_controller.admin)) }
     describe 'POST /v3/organization_quotas' do
       let(:api_call) { lambda { |user_headers| post '/v3/organization_quotas', params.to_json, user_headers } }
 
       let(:params) do
         {
-        'name': 'org1',
+          'name': 'org1',
+          'relationships': {
+            'organizations': {
+              'data': [
+                { 'guid': 'organization-guid' },
+              ]
+            }
+          }
         }
       end
 
@@ -22,6 +29,11 @@ module VCAP::CloudController
           created_at: iso8601,
           updated_at: iso8601,
           name: params[:name],
+          relationships: {
+            organizations: {
+              data: [{ 'guid': 'organization-guid' }],
+            }
+          },
           links: {
             self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/organization_quotas\/#{params[:guid]}) },
           }

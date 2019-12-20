@@ -15,12 +15,14 @@ module VCAP::CloudController
             paid_services_allowed: false,
             total_service_instances: 1,
             total_routes: 0,
+            relationships: { organizations: { data: []}  },
           })
         end
 
         let(:minimum_message) do
           VCAP::CloudController::OrganizationQuotasCreateMessage.new({
-            'name' => 'my-name'
+            'name' => 'my-name',
+            'relationships' => { organizations: { data: []}  },
           })
         end
 
@@ -31,6 +33,7 @@ module VCAP::CloudController
           expect(organization_quota.memory_limit).to eq(10)
           expect(organization_quota.total_services).to eq(1)
           expect(organization_quota.total_routes).to eq(0)
+          expect(organization_quota.organizations.count).to eq(1)
         end
 
         it 'provides defaults if the parameters are not provided' do
