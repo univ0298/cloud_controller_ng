@@ -16,7 +16,7 @@ module VCAP::CloudController
     validates :name,
       string: true,
       presence: true,
-      allow_nil: false,
+      allow_blank: false,
       length: { maximum: MAX_ORGANIZATION_QUOTA_NAME_LENGTH }
 
     validate :apps_validator
