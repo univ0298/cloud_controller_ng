@@ -300,6 +300,88 @@ module VCAP::CloudController
         end
       end
     end
+
+    describe 'PATCH /v3/organization_quotas/:guid' do
+      let(:api_call) { lambda { |user_headers| patch "/v3/organization_quotas/#{organization_quota.guid}", params.to_json, user_headers } }
+
+      let(:params) do
+        {
+          "name": 'don-quixote',
+          "apps": {
+            "total_memory_in_mb": 5120,
+            "per_process_memory_in_mb": 1024,
+            "total_instances": 10,
+            "per_app_tasks": 5
+          },
+          "services": {
+            "paid_services_allowed": true,
+            "total_service_instances": 10,
+            "total_service_keys": 20,
+          },
+          "routes": {
+            "total_routes": 8,
+            "total_reserved_ports": 4
+          },
+          "domains": {
+            "total_private_domains": 7
+          }
+        }
+      end
+      context 'using a valid request body' do
+        it 'updates the organization_quota' do
+          api_call.call(admin_header)
+          expect(organization_quota.reload.total_routes).to eq(8)
+        end
+
+        let(:organization_quota_json) do
+          {
+            guid: UUID_REGEX,
+            created_at: iso8601,
+            updated_at: iso8601,
+            name: params[:name],
+            apps: {
+              total_memory_in_mb: 5120,
+              per_process_memory_in_mb: 1024,
+              total_instances: 10,
+              per_app_tasks: 5
+            },
+            services: {
+              paid_services_allowed: true,
+              total_service_instances: 10,
+              total_service_keys: 20,
+            },
+            routes: {
+              total_routes: 8,
+              total_reserved_ports: 4
+            },
+            domains: {
+              total_domains: 7,
+            },
+            relationships: {
+              organizations: {
+                data: [{ 'guid': 'organization-guid' }],
+              }
+            },
+            links: {
+              self: { href: %r(#{Regexp.escape(link_prefix)}\/v3\/organization_quotas\/#{params[:guid]}) },
+            }
+          }
+        end
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(
+            code: 403,
+          )
+          h['admin'] = {
+            code: 201,
+            response_object: organization_quota_json
+          }
+          h.freeze
+        end
+
+        it_behaves_like 'permissions for single object endpoint', ALL_PERMISSIONS
+      end
+    end
   end
 end
 

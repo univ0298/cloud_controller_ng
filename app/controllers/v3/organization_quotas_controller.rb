@@ -18,6 +18,23 @@ class OrganizationQuotasController < ApplicationController
     unprocessable!(e.message)
   end
 
+  def update
+    unauthorized! unless permission_queryer.can_write_globally?
+
+    message = VCAP::CloudController::OrganizationQuotaUpdateMessage.new(hashed_params[:body])
+    unprocessable!(message.errors.full_messages) unless message.valid?
+    #get the quota
+    organization_quota = QuotaDefinition.first(guid: hashed_params[:guid])
+
+    #action - implement this
+    organization_quota = OrganizationQuotasUpdate.update(message)
+
+
+    render json: Presenters::V3::OrganizationQuotasPresenter.new(organization_quota), status: :created
+  rescue OrganizationQuotasCreate::Error => e
+    unprocessable!(e.message)
+  end
+
   def show
     organization_quota = QuotaDefinition.first(guid: hashed_params[:guid])
     resource_not_found!(:organization_quota) unless organization_quota
