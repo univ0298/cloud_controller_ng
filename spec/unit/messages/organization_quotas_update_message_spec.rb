@@ -2,8 +2,8 @@ require 'spec_helper'
 require 'messages/organization_quotas_update_message'
 
 module VCAP::CloudController
-  RSpec.describe OrganizationQuotaUpdateMessage do
-    subject { OrganizationQuotaUpdateMessage.new(params) }
+  RSpec.describe OrganizationQuotasUpdateMessage do
+    subject { OrganizationQuotasUpdateMessage.new(params) }
 
     describe 'validations' do
       context 'when no params are given' do
@@ -42,13 +42,13 @@ module VCAP::CloudController
         end
 
         context 'when it is at max length' do
-          let(:params) { {name: 'B' * OrganizationQuotaUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH, } }
+          let(:params) { {name: 'B' * OrganizationQuotasUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH, } }
 
           it { is_expected.to be_valid }
         end
 
         context 'when it is too long' do
-          let(:params) { {name: 'B' * (OrganizationQuotaUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH + 1), } }
+          let(:params) { {name: 'B' * (OrganizationQuotasUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH + 1), } }
 
           it 'is not valid' do
             expect(subject).to be_invalid

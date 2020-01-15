@@ -21,7 +21,7 @@ class OrganizationQuotasController < ApplicationController
   def update
     unauthorized! unless permission_queryer.can_write_globally?
 
-    message = VCAP::CloudController::OrganizationQuotaUpdateMessage.new(hashed_params[:body])
+    message = VCAP::CloudController::OrganizationQuotasUpdateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
     #get the quota
     organization_quota = QuotaDefinition.first(guid: hashed_params[:guid])

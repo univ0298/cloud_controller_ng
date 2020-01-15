@@ -1,8 +1,8 @@
-require 'messages/metadata_base_message'
+require 'messages/organization_quotas_update_message'
 require 'messages/validators'
 
 module VCAP::CloudController
-  class OrganizationQuotasCreateMessage < OrganizationUpdateMessage
+  class OrganizationQuotasCreateMessage < OrganizationQuotasUpdateMessage
 
     validates :name,
       presence: true

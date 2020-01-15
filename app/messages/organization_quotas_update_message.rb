@@ -1,8 +1,8 @@
-require 'messages/organization_quotas_create_message'
+require 'messages/metadata_base_message'
 require 'messages/validators'
 
 module VCAP::CloudController
-  class OrganizationQuotaUpdateMessage < BaseMessage
+  class OrganizationQuotasUpdateMessage < BaseMessage
 
     MAX_ORGANIZATION_QUOTA_NAME_LENGTH = 250
 
