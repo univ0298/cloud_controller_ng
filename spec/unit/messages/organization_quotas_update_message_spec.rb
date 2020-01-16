@@ -14,7 +14,7 @@ module VCAP::CloudController
         end
       end
       context 'when unexpected keys are requested' do
-        let(:params) { {unexpected: 'meow', name: 'the-name'} }
+        let(:params) { { unexpected: 'meow', name: 'the-name' } }
 
         it 'is not valid' do
           expect(subject).not_to be_valid
@@ -24,31 +24,31 @@ module VCAP::CloudController
 
       describe 'name' do
         context 'when it is non-alphanumeric' do
-          let(:params) { {name: 'thë-name'} }
+          let(:params) { { name: 'thë-name' } }
 
           it { is_expected.to be_valid }
         end
 
         context 'when it contains hyphens' do
-          let(:params) { {name: 'a-z'} }
+          let(:params) { { name: 'a-z' } }
 
           it { is_expected.to be_valid }
         end
 
         context 'when it contains capital ascii' do
-          let(:params) { {name: 'AZ'} }
+          let(:params) { { name: 'AZ' } }
 
           it { is_expected.to be_valid }
         end
 
         context 'when it is at max length' do
-          let(:params) { {name: 'B' * OrganizationQuotasUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH, } }
+          let(:params) { { name: 'B' * OrganizationQuotasUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH, } }
 
           it { is_expected.to be_valid }
         end
 
         context 'when it is too long' do
-          let(:params) { {name: 'B' * (OrganizationQuotasUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH + 1), } }
+          let(:params) { { name: 'B' * (OrganizationQuotasUpdateMessage::MAX_ORGANIZATION_QUOTA_NAME_LENGTH + 1), } }
 
           it 'is not valid' do
             expect(subject).to be_invalid
@@ -57,7 +57,7 @@ module VCAP::CloudController
         end
 
         context 'when it is blank' do
-          let(:params) { {name: '', } }
+          let(:params) { { name: '', } }
 
           it 'is not valid' do
             expect(subject).to be_invalid
@@ -85,7 +85,7 @@ module VCAP::CloudController
           let(:params) {
             {
               name: 'my-name',
-              apps: {bad_key: 'bob'},
+              apps: { bad_key: 'bob' },
             }
           }
 
@@ -100,7 +100,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_memory_in_mb: 'bob'},
+                apps: { total_memory_in_mb: 'bob' },
 
               }
             }
@@ -114,7 +114,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_memory_in_mb: 1.1},
+                apps: { total_memory_in_mb: 1.1 },
 
               }
             }
@@ -128,7 +128,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_memory_in_mb: -1},
+                apps: { total_memory_in_mb: -1 },
 
               }
             }
@@ -143,7 +143,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_memory_in_mb: 0},
+                apps: { total_memory_in_mb: 0 },
 
               }
             }
@@ -154,7 +154,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_memory_in_mb: nil},
+                apps: { total_memory_in_mb: nil },
 
               }
             }
@@ -168,7 +168,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_process_memory_in_mb: 'bob'},
+                apps: { per_process_memory_in_mb: 'bob' },
 
               }
             }
@@ -182,7 +182,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_process_memory_in_mb: 1.1},
+                apps: { per_process_memory_in_mb: 1.1 },
 
               }
             }
@@ -196,7 +196,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_process_memory_in_mb: -1},
+                apps: { per_process_memory_in_mb: -1 },
 
               }
             }
@@ -211,7 +211,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_process_memory_in_mb: 0},
+                apps: { per_process_memory_in_mb: 0 },
 
               }
             }
@@ -222,7 +222,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_process_memory_in_mb: nil},
+                apps: { per_process_memory_in_mb: nil },
 
               }
             }
@@ -236,7 +236,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_instances: 'bob'},
+                apps: { total_instances: 'bob' },
 
               }
             }
@@ -250,7 +250,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_instances: 1.1},
+                apps: { total_instances: 1.1 },
 
               }
             }
@@ -264,7 +264,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_instances: -1},
+                apps: { total_instances: -1 },
 
               }
             }
@@ -279,7 +279,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_instances: 0},
+                apps: { total_instances: 0 },
 
               }
             }
@@ -290,7 +290,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {total_instances: nil},
+                apps: { total_instances: nil },
 
               }
             }
@@ -304,7 +304,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_app_tasks: 'bob'},
+                apps: { per_app_tasks: 'bob' },
               }
             }
 
@@ -317,7 +317,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_app_tasks: 1.1},
+                apps: { per_app_tasks: 1.1 },
               }
             }
 
@@ -330,7 +330,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_app_tasks: -1},
+                apps: { per_app_tasks: -1 },
               }
             }
 
@@ -344,7 +344,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_app_tasks: 0},
+                apps: { per_app_tasks: 0 },
               }
             }
 
@@ -354,7 +354,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                apps: {per_app_tasks: nil},
+                apps: { per_app_tasks: nil },
               }
             }
 
@@ -381,7 +381,7 @@ module VCAP::CloudController
           let(:params) {
             {
               name: 'my-name',
-              services: {bad_key: 'billy'},
+              services: { bad_key: 'billy' },
             }
           }
 
@@ -396,7 +396,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_instances: 'bob'},
+                services: { total_service_instances: 'bob' },
 
               }
             }
@@ -410,7 +410,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_instances: 1.1},
+                services: { total_service_instances: 1.1 },
 
               }
             }
@@ -424,7 +424,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_instances: -1},
+                services: { total_service_instances: -1 },
 
               }
             }
@@ -439,7 +439,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_instances: 0},
+                services: { total_service_instances: 0 },
 
               }
             }
@@ -450,7 +450,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_instances: nil},
+                services: { total_service_instances: nil },
 
               }
             }
@@ -464,7 +464,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_keys: 'bob'},
+                services: { total_service_keys: 'bob' },
 
               }
             }
@@ -478,7 +478,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_keys: 1.1},
+                services: { total_service_keys: 1.1 },
 
               }
             }
@@ -492,7 +492,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_keys: -1},
+                services: { total_service_keys: -1 },
 
               }
             }
@@ -507,7 +507,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_keys: 0},
+                services: { total_service_keys: 0 },
 
               }
             }
@@ -518,7 +518,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                services: {total_service_keys: nil},
+                services: { total_service_keys: nil },
 
               }
             }
@@ -531,7 +531,7 @@ module VCAP::CloudController
           context 'when it is a boolean' do
             let(:params) { {
               name: 'thë-name',
-              services: {paid_services_allowed: false},
+              services: { paid_services_allowed: false },
             }
             }
 
@@ -541,7 +541,7 @@ module VCAP::CloudController
           context 'when it is not a boolean' do
             let(:params) { {
               name: 'thë-name',
-              services: {paid_services_allowed: 'b'},
+              services: { paid_services_allowed: 'b' },
             }
             }
 
@@ -571,7 +571,7 @@ module VCAP::CloudController
           let(:params) {
             {
               name: 'my-name',
-              routes: {bad_key: 'billy'},
+              routes: { bad_key: 'billy' },
             }
           }
 
@@ -586,7 +586,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_routes: 'bob'},
+                routes: { total_routes: 'bob' },
               }
             }
 
@@ -599,7 +599,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_routes: 1.1},
+                routes: { total_routes: 1.1 },
               }
             }
 
@@ -612,7 +612,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_routes: -1},
+                routes: { total_routes: -1 },
               }
             }
 
@@ -625,7 +625,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_routes: 0},
+                routes: { total_routes: 0 },
               }
             }
 
@@ -635,7 +635,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_routes: nil},
+                routes: { total_routes: nil },
               }
             }
 
@@ -648,7 +648,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_reserved_ports: 'bob'},
+                routes: { total_reserved_ports: 'bob' },
               }
             }
 
@@ -661,7 +661,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_reserved_ports: 1.1},
+                routes: { total_reserved_ports: 1.1 },
               }
             }
 
@@ -674,7 +674,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_reserved_ports: -1},
+                routes: { total_reserved_ports: -1 },
               }
             }
 
@@ -687,7 +687,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_reserved_ports: 0},
+                routes: { total_reserved_ports: 0 },
               }
             }
 
@@ -697,7 +697,7 @@ module VCAP::CloudController
             let(:params) {
               {
                 name: 'my-name',
-                routes: {total_reserved_ports: nil},
+                routes: { total_reserved_ports: nil },
               }
             }
 
@@ -724,7 +724,7 @@ module VCAP::CloudController
           let(:params) {
             {
               name: 'my-name',
-              domains: {bad_key: 'billy'},
+              domains: { bad_key: 'billy' },
             }
           }
 
@@ -738,7 +738,7 @@ module VCAP::CloudController
               let(:params) {
                 {
                   name: 'my-name',
-                  domains: {total_domains: 'bob'},
+                  domains: { total_domains: 'bob' },
                 }
               }
 
@@ -751,7 +751,7 @@ module VCAP::CloudController
               let(:params) {
                 {
                   name: 'my-name',
-                  domains: {total_domains: 1.1},
+                  domains: { total_domains: 1.1 },
                 }
               }
 
@@ -764,7 +764,7 @@ module VCAP::CloudController
               let(:params) {
                 {
                   name: 'my-name',
-                  domains: {total_domains: -1},
+                  domains: { total_domains: -1 },
                 }
               }
 
@@ -777,7 +777,7 @@ module VCAP::CloudController
               let(:params) {
                 {
                   name: 'my-name',
-                  domains: {total_domains: 0},
+                  domains: { total_domains: 0 },
                 }
               }
 
@@ -787,7 +787,7 @@ module VCAP::CloudController
               let(:params) {
                 {
                   name: 'my-name',
-                  domains: {total_domains: nil},
+                  domains: { total_domains: nil },
                 }
               }
 
@@ -815,8 +815,8 @@ module VCAP::CloudController
               relationships: {
                 organizations: {
                   data: [
-                    {guid: 'KKW-beauty'},
-                    {guid: 'skims'},
+                    { guid: 'KKW-beauty' },
+                    { guid: 'skims' },
                   ]
                 },
               }
@@ -831,7 +831,7 @@ module VCAP::CloudController
             {
               name: 'kourtney',
               relationships: {
-                organizations: {guid: 'poosh'},
+                organizations: { guid: 'poosh' },
               }
             }
           end
@@ -846,7 +846,7 @@ module VCAP::CloudController
               relationships: {
                 organizations: {
                   data: [
-                    {guid: 150000},
+                    { guid: 150000 },
                   ]
                 }
               }

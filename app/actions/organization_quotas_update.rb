@@ -3,12 +3,48 @@ module VCAP::CloudController
     class Error < ::StandardError
     end
 
-    # org and message?
+    # rubocop:disable CyclomaticComplexity
     def update(quota, message)
       quota.db.transaction do
-        quota.name = message.name if message.requested(:name)
+        quota.lock!
 
+        quota.name = message.name if message.name
+
+        quota.memory_limit = message.total_memory_in_mb if message.total_memory_in_mb
+
+        quota.instance_memory_limit = message.per_process_memory_in_mb if message.per_process_memory_in_mb
+        quota.app_instance_limit = message.total_instances if message.total_instances
+        quota.app_task_limit = message.per_app_tasks if message.per_app_tasks
+
+        quota.total_services = message.total_service_instances if message.total_service_instances
+        quota.total_service_keys = message.total_service_keys if message.total_service_keys
+        quota.non_basic_services_allowed = message.paid_services_allowed if message.paid_services_allowed
+
+        quota.total_reserved_route_ports = message.total_reserved_ports if message.total_reserved_ports
+        quota.total_routes = message.total_routes if message.total_routes
+
+        quota.total_private_domains = message.total_domains if message.total_domains
+
+        quota.save
       end
+      # rubocop:enable CyclomaticComplexity
+
+      quota
+    rescue Sequel::ValidationFailed => e
+      validation_error!(e, message)
+    end
+
+    private
+
+    def validation_error!(error, message)
+      if error.errors.on(:name)&.include?(:unique)
+        error!("Organization Quota name '#{message.name}' already exists.")
+      end
+      error!(error.message)
+    end
+
+    def error!(message)
+      raise Error.new(message)
     end
   end
 end

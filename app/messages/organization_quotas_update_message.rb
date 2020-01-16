@@ -3,7 +3,6 @@ require 'messages/validators'
 
 module VCAP::CloudController
   class OrganizationQuotasUpdateMessage < BaseMessage
-
     MAX_ORGANIZATION_QUOTA_NAME_LENGTH = 250
 
     def self.key_requested?(key)
@@ -16,7 +15,7 @@ module VCAP::CloudController
 
     validates :name,
       string: true,
-      length: {maximum: MAX_ORGANIZATION_QUOTA_NAME_LENGTH},
+      length: { maximum: MAX_ORGANIZATION_QUOTA_NAME_LENGTH },
       presence: true,
       if: key_requested?(:name)
 
@@ -98,19 +97,19 @@ module VCAP::CloudController
     validates_with NoAdditionalKeysValidator
 
     validates :total_memory_in_mb,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
 
     validates :per_process_memory_in_mb,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
 
     validates :total_instances,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
 
     validates :per_app_tasks,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
   end
 
@@ -120,15 +119,15 @@ module VCAP::CloudController
     validates_with NoAdditionalKeysValidator
 
     validates :total_service_keys,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
 
     validates :total_service_instances,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
 
     validates :paid_services_allowed,
-      inclusion: {in: [true, false], message: 'must be a boolean'},
+      inclusion: { in: [true, false], message: 'must be a boolean' },
       allow_nil: true
   end
 
@@ -138,11 +137,11 @@ module VCAP::CloudController
     validates_with NoAdditionalKeysValidator
 
     validates :total_routes,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
 
     validates :total_reserved_ports,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
   end
 
@@ -152,7 +151,7 @@ module VCAP::CloudController
     validates_with NoAdditionalKeysValidator
 
     validates :total_domains,
-      numericality: {only_integer: true, greater_than_or_equal_to: 0},
+      numericality: { only_integer: true, greater_than_or_equal_to: 0 },
       allow_nil: true
   end
 
@@ -171,5 +170,3 @@ module VCAP::CloudController
     end
   end
 end
-
-

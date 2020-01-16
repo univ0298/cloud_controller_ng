@@ -3,9 +3,7 @@ require 'messages/validators'
 
 module VCAP::CloudController
   class OrganizationQuotasCreateMessage < OrganizationQuotasUpdateMessage
-
     validates :name,
       presence: true
-
   end
 end
