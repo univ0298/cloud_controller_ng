@@ -5,10 +5,7 @@ require 'messages/organization_quotas_update_message'
 module VCAP::CloudController
   RSpec.describe OrganizationQuotasUpdate do
     describe 'update' do
-      subject(:org_quotas_update) { OrganizationQuotasUpdate.new }
-
       context 'when updating a organization quota' do
-        # let(:org) { VCAP::CloudController::Organization.make }
         let!(:org_quota) { VCAP::CloudController::QuotaDefinition.make(name: 'org_quota_name') }
 
         let(:message) do
@@ -44,7 +41,7 @@ module VCAP::CloudController
         end
 
         it 'updates an organization quota with the given values' do
-          updated_organization_quota = org_quotas_update.update(org_quota, message)
+          updated_organization_quota = OrganizationQuotasUpdate.update(org_quota, message)
 
           expect(updated_organization_quota.name).to eq('don-quixote')
 
@@ -64,7 +61,7 @@ module VCAP::CloudController
         end
 
         it 'updates an organization quota with only the given values' do
-          updated_organization_quota = org_quotas_update.update(org_quota, minimum_message)
+          updated_organization_quota = OrganizationQuotasUpdate.update(org_quota, minimum_message)
 
           expect(updated_organization_quota.name).to eq('org_quota_name')
         end
@@ -78,7 +75,7 @@ module VCAP::CloudController
 
             message = VCAP::CloudController::OrganizationQuotasCreateMessage.new(name: 'foobar')
             expect {
-              org_quotas_update.update(org_quota, message)
+              OrganizationQuotasUpdate.update(org_quota, message)
             }.to raise_error(OrganizationQuotasUpdate::Error, 'blork is busted')
           end
 
@@ -98,7 +95,7 @@ module VCAP::CloudController
 
             it 'raises a human-friendly error' do
               expect {
-                org_quotas_update.update(org_quota, update_message)
+                OrganizationQuotasUpdate.update(org_quota, update_message)
               }.to raise_error(OrganizationQuotasUpdate::Error, "Organization Quota name '#{name}' already exists.")
             end
           end

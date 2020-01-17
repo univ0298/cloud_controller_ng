@@ -4,7 +4,7 @@ module VCAP::CloudController
     end
 
     # rubocop:disable CyclomaticComplexity
-    def update(quota, message)
+    def self.update(quota, message)
       quota.db.transaction do
         quota.lock!
 
@@ -31,20 +31,11 @@ module VCAP::CloudController
 
       quota
     rescue Sequel::ValidationFailed => e
-      validation_error!(e, message)
-    end
-
-    private
-
-    def validation_error!(error, message)
-      if error.errors.on(:name)&.include?(:unique)
-        error!("Organization Quota name '#{message.name}' already exists.")
+      if e.errors.on(:name)&.include?(:unique)
+        raise Error.new("Organization Quota name '#{message.name}' already exists.")
       end
-      error!(error.message)
-    end
 
-    def error!(message)
-      raise Error.new(message)
+      raise Error.new(e.message)
     end
   end
 end

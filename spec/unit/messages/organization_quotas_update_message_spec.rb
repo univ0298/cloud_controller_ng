@@ -61,7 +61,7 @@ module VCAP::CloudController
 
           it 'is not valid' do
             expect(subject).to be_invalid
-            expect(subject.errors[:name]).to eq ["can't be blank"]
+            expect(subject.errors[:name]).to eq ['is too short (minimum is 1 character)']
           end
         end
       end

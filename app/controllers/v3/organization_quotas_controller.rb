@@ -1,4 +1,5 @@
 require 'actions/organization_quotas_create'
+require 'actions/organization_quotas_update'
 require 'messages/organization_quotas_create_message'
 require 'messages/organization_quotas_list_message'
 require 'fetchers/organization_quota_list_fetcher'
@@ -23,10 +24,10 @@ class OrganizationQuotasController < ApplicationController
 
     message = VCAP::CloudController::OrganizationQuotasUpdateMessage.new(hashed_params[:body])
     unprocessable!(message.errors.full_messages) unless message.valid?
-    # get the quota
-    organization_quota = QuotaDefinition.first(guid: hashed_params[:guid])
 
-    # action - implement this
+    organization_quota = QuotaDefinition.first(guid: hashed_params[:guid])
+    resource_not_found!(:organization_quota) unless organization_quota
+
     organization_quota = OrganizationQuotasUpdate.update(organization_quota, message)
 
     render json: Presenters::V3::OrganizationQuotasPresenter.new(organization_quota), status: :ok
