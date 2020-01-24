@@ -1,5 +1,6 @@
 require 'actions/space_quotas_create'
 require 'messages/space_quotas_create_message'
+require 'messages/space_quotas_list_message'
 require 'presenters/v3/space_quota_presenter'
 
 class SpaceQuotasController < ApplicationController
@@ -36,6 +37,30 @@ class SpaceQuotasController < ApplicationController
     render status: :ok, json: Presenters::V3::SpaceQuotaPresenter.new(
       space_quota,
       visible_space_guids: readable_space_guids
+    )
+  end
+
+  def index
+    message = VCAP::CloudController::SpaceQuotasListMessage.from_params(query_params)
+    unprocessable!(message.errors.full_messages) unless message.valid?
+
+    dataset = if permission_queryer.can_read_globally?
+                SpaceQuotaDefinition.dataset
+              else
+                SpaceQuotaDefinition.where(
+                  organization: Organization.where(guid: permission_queryer.writeable_org_guids)
+                ).union(
+                  SpaceQuotaDefinition.where(spaces: Space.where(guid: permission_queryer.readable_space_guids)),
+                  alias: :space_quota_definitions
+                )
+              end
+
+    render status: :ok, json: Presenters::V3::PaginatedListPresenter.new(
+      presenter: Presenters::V3::SpaceQuotaPresenter,
+      paginated_result: SequelPaginator.new.get_page(dataset, message.try(:pagination_options)),
+      path: '/v3/space_quotas',
+      message: message,
+      extra_presenter_args: { visible_space_guids: permission_queryer.readable_space_guids },
     )
   end
 

@@ -88,6 +88,14 @@ class VCAP::CloudController::Permissions
     can_read_globally? || membership.has_any_roles?(ROLES_FOR_ORG_READING, nil, org_guid)
   end
 
+  def writeable_org_guids
+    if can_write_globally?
+      VCAP::CloudController::Organization.select(:guid).all.map(&:guid)
+    else
+      membership.org_guids_for_roles(ROLES_FOR_ORG_WRITING)
+    end
+  end
+
   def can_write_to_org?(org_guid)
     return true if can_write_globally?
     return false unless membership.has_any_roles?(ROLES_FOR_ORG_WRITING, nil, org_guid)

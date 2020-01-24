@@ -235,6 +235,32 @@ module VCAP::CloudController
       end
     end
 
+    describe '#writeable_org_guids' do
+      it 'returns all the org guids for admins' do
+        user = set_current_user_as_admin
+        subject = Permissions.new(user)
+
+        # add more organizations to database
+        Organization.make.guid
+        Organization.make.guid
+
+        org_guids = subject.writeable_org_guids
+
+        expect(org_guids.count).to eq(Organization.count)
+        expect(org_guids).to contain_exactly(*Organization.all.map(&:guid))
+      end
+
+      it 'returns org guids from membership' do
+        org_guids = %w(writeable-org-guid-1 writeable-org-guid-2)
+        membership = instance_double(Membership, org_guids_for_roles: org_guids)
+        expect(Membership).to receive(:new).with(user).and_return(membership)
+
+        writeable_org_guids = permissions.writeable_org_guids
+        expect(writeable_org_guids).to eq(org_guids)
+        expect(membership).to have_received(:org_guids_for_roles).with(VCAP::CloudController::Permissions::ROLES_FOR_ORG_WRITING)
+      end
+    end
+
     describe '#can_write_to_org?' do
       context 'user has no membership' do
         context 'and user is an admin' do

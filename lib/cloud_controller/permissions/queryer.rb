@@ -94,6 +94,17 @@ class VCAP::CloudController::Permissions::Queryer
     end
   end
 
+  def writeable_org_guids
+    science 'writeable_org_guids' do |e|
+      e.use { db_permissions.writeable_org_guids }
+      e.try { perm_permissions.writeable_org_guids }
+
+      e.compare { |a, b| compare_arrays(a, b) }
+
+      e.run_if { false }
+    end
+  end
+
   def can_write_to_org?(org_guid)
     science 'can_write_to_org' do |e|
       e.context(org_guid: org_guid)

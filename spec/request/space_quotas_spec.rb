@@ -4,8 +4,8 @@ require 'request_spec_shared_examples'
 module VCAP::CloudController
   RSpec.describe 'space_quotas' do
     let(:user) { VCAP::CloudController::User.make(guid: 'user-guid') }
-    let!(:org) { VCAP::CloudController::Organization.make(guid: 'organization-guid') }
-    let(:space_quota) { VCAP::CloudController::SpaceQuotaDefinition.make(guid: 'space-quota-guid', organization: org) }
+    let(:org) { VCAP::CloudController::Organization.make(guid: 'organization-guid') }
+    let!(:space_quota) { VCAP::CloudController::SpaceQuotaDefinition.make(guid: 'space-quota-guid', organization: org) }
     let(:space) { VCAP::CloudController::Space.make(guid: 'space-guid', organization: org, space_quota_definition: space_quota) }
     let(:admin_header) { headers_for(user, scopes: %w(cloud_controller.admin)) }
 
@@ -75,6 +75,58 @@ module VCAP::CloudController
           expect(last_response).to have_status_code(401)
           expect(last_response).to have_error_message('Authentication error')
         end
+      end
+    end
+
+    describe 'GET /v3/space_quotas' do
+      let(:api_call) { lambda { |user_headers| get '/v3/space_quotas', nil, user_headers } }
+
+      context 'when listing space quotas without filters' do
+        let!(:unapplied_space_quota) { VCAP::CloudController::SpaceQuotaDefinition.make(organization: org, guid: 'unapplied-space-quota') }
+
+        let(:other_org) { VCAP::CloudController::Organization.make }
+        let!(:other_space_quota) { VCAP::CloudController::SpaceQuotaDefinition.make(organization: other_org, guid: 'other-space-quota') }
+
+        let(:expected_codes_and_responses) do
+          h = Hash.new(code: 200, response_objects: [])
+          h['admin'] = {
+            code: 200,
+            response_objects: contain_exactly(
+              make_space_quota_json(space_quota),
+              make_space_quota_json(other_space_quota),
+              make_space_quota_json(unapplied_space_quota)
+            )
+          }
+          h['admin_read_only'] = {
+            code: 200,
+            response_objects: contain_exactly(
+              make_space_quota_json(space_quota),
+              make_space_quota_json(other_space_quota),
+              make_space_quota_json(unapplied_space_quota)
+            )
+          }
+          h['global_auditor'] = {
+            code: 200,
+            response_objects: contain_exactly(
+              make_space_quota_json(space_quota),
+              make_space_quota_json(other_space_quota),
+              make_space_quota_json(unapplied_space_quota)
+            )
+          }
+          h['org_manager'] = {
+            code: 200,
+            response_objects: contain_exactly(
+              make_space_quota_json(space_quota),
+              make_space_quota_json(unapplied_space_quota)
+            )
+          }
+          h['space_manager'] = { code: 200, response_objects: [make_space_quota_json(space_quota)] }
+          h['space_auditor'] = { code: 200, response_objects: [make_space_quota_json(space_quota)] }
+          h['space_developer'] = { code: 200, response_objects: [make_space_quota_json(space_quota)] }
+          h.freeze
+        end
+
+        it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
       end
     end
 
