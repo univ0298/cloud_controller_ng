@@ -235,7 +235,7 @@ module VCAP::CloudController
       end
     end
 
-    describe '#writeable_org_guids' do
+    describe '#readable_org_contents_org_guids' do
       it 'returns all the org guids for admins' do
         user = set_current_user_as_admin
         subject = Permissions.new(user)
@@ -244,20 +244,24 @@ module VCAP::CloudController
         Organization.make.guid
         Organization.make.guid
 
-        org_guids = subject.writeable_org_guids
+        org_guids = subject.readable_org_contents_org_guids
 
         expect(org_guids.count).to eq(Organization.count)
         expect(org_guids).to contain_exactly(*Organization.all.map(&:guid))
       end
 
-      it 'returns org guids from membership' do
-        org_guids = %w(writeable-org-guid-1 writeable-org-guid-2)
-        membership = instance_double(Membership, org_guids_for_roles: org_guids)
-        expect(Membership).to receive(:new).with(user).and_return(membership)
+      context 'when the user has an org role' do
+        let(:other_org) { Organization.make }
 
-        writeable_org_guids = permissions.writeable_org_guids
-        expect(writeable_org_guids).to eq(org_guids)
-        expect(membership).to have_received(:org_guids_for_roles).with(VCAP::CloudController::Permissions::ROLES_FOR_ORG_WRITING)
+        before do
+          set_current_user_as_role(user: user, role: 'org_manager', org: org)
+          set_current_user_as_role(user: user, role: 'org_auditor', org: other_org)
+        end
+
+        it 'returns the org guids for orgs where the user has full read access to the org contents' do
+          readable_org_guids = permissions.readable_org_contents_org_guids
+          expect(readable_org_guids).to eq([org_guid])
+        end
       end
     end
 

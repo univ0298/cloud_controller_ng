@@ -6,6 +6,10 @@ class VCAP::CloudController::Permissions
     VCAP::CloudController::Membership::ORG_BILLING_MANAGER,
   ].freeze
 
+  ROLES_FOR_ORG_CONTENT_READING = [
+    VCAP::CloudController::Membership::ORG_MANAGER,
+  ].freeze
+
   ROLES_FOR_ORG_WRITING = [
     VCAP::CloudController::Membership::ORG_MANAGER,
   ].freeze
@@ -84,16 +88,16 @@ class VCAP::CloudController::Permissions
     end
   end
 
-  def can_read_from_org?(org_guid)
-    can_read_globally? || membership.has_any_roles?(ROLES_FOR_ORG_READING, nil, org_guid)
-  end
-
-  def writeable_org_guids
-    if can_write_globally?
+  def readable_org_contents_org_guids
+    if can_read_globally?
       VCAP::CloudController::Organization.select(:guid).all.map(&:guid)
     else
-      membership.org_guids_for_roles(ROLES_FOR_ORG_WRITING)
+      membership.org_guids_for_roles(ROLES_FOR_ORG_CONTENT_READING)
     end
+  end
+
+  def can_read_from_org?(org_guid)
+    can_read_globally? || membership.has_any_roles?(ROLES_FOR_ORG_READING, nil, org_guid)
   end
 
   def can_write_to_org?(org_guid)

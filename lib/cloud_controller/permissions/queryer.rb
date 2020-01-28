@@ -84,6 +84,21 @@ class VCAP::CloudController::Permissions::Queryer
     end
   end
 
+  def readable_org_contents_org_guids
+    science 'readable_org_contents_org_guids' do |e|
+      e.use do
+        db_permissions.readable_org_contents_org_guids
+      end
+      e.try do
+        perm_permissions.readable_org_contents_org_guids
+      end
+
+      e.compare { |a, b| compare_arrays(a, b) }
+
+      e.run_if { !db_permissions.can_read_globally? }
+    end
+  end
+
   def can_read_from_org?(org_guid)
     science 'can_read_from_org' do |e|
       e.context(org_guid: org_guid)
@@ -91,17 +106,6 @@ class VCAP::CloudController::Permissions::Queryer
       e.try { perm_permissions.can_read_from_org?(org_guid) }
 
       e.run_if { !db_permissions.can_read_globally? }
-    end
-  end
-
-  def writeable_org_guids
-    science 'writeable_org_guids' do |e|
-      e.use { db_permissions.writeable_org_guids }
-      e.try { perm_permissions.writeable_org_guids }
-
-      e.compare { |a, b| compare_arrays(a, b) }
-
-      e.run_if { false }
     end
   end
 

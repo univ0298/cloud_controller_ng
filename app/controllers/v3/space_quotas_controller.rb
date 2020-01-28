@@ -44,17 +44,15 @@ class SpaceQuotasController < ApplicationController
     message = VCAP::CloudController::SpaceQuotasListMessage.from_params(query_params)
     unprocessable!(message.errors.full_messages) unless message.valid?
 
-    dataset = if permission_queryer.can_read_globally?
-                SpaceQuotaDefinition.dataset
-              else
-                SpaceQuotaDefinition.where(
-                  organization: Organization.where(guid: permission_queryer.writeable_org_guids)
-                ).union(
-                  SpaceQuotaDefinition.where(spaces: Space.where(guid: permission_queryer.readable_space_guids)),
-                  alias: :space_quota_definitions
-                )
-              end
-
+    # readable_org_guids_with_contents
+    dataset = SpaceQuotaDefinition.where(
+      # all space quotas where the org that the quota lives in is readable to the queryer
+      organization: Organization.where(guid: permission_queryer.readable_org_contents_org_guids)
+    ).union(
+      # all space quotas where the space that the quota is applied to is readable to the queryer
+      SpaceQuotaDefinition.where(spaces: Space.where(guid: permission_queryer.readable_space_guids)),
+      alias: :space_quota_definitions
+    )
     render status: :ok, json: Presenters::V3::PaginatedListPresenter.new(
       presenter: Presenters::V3::SpaceQuotaPresenter,
       paginated_result: SequelPaginator.new.get_page(dataset, message.try(:pagination_options)),
