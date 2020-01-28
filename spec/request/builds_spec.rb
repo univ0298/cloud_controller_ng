@@ -6,6 +6,7 @@ RSpec.describe 'Builds' do
   let(:space) { VCAP::CloudController::Space.make }
   let(:developer) { make_developer_for_space(space) }
   let(:developer_headers) { headers_for(developer, user_name: user_name, email: 'bob@loblaw.com') }
+
   let(:user_name) { 'bob the builder' }
   let(:parsed_response) { MultiJson.load(last_response.body) }
   let(:app_model) { VCAP::CloudController::AppModel.make(space_guid: space.guid, name: 'my-app') }
@@ -507,20 +508,28 @@ RSpec.describe 'Builds' do
             let(:request) do
               {
                 state: 'STAGED',
+                lifecycle: {
+                  type: 'kpack',
+                  data: {
+                    image: 'some-fake-image:tag',
+                  }
+                }
               }
-            end
-
-            it 'returns 200' do
-              patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
-              expect(last_response.status).to eq(200)
             end
 
             it 'updates the state to STAGED' do
               patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
               parsed_response = MultiJson.load(last_response.body)
+              expect(last_response.status).to eq(200)
 
               expect(build_model.reload.state).to eq 'STAGED'
               expect(parsed_response['state']).to eq 'STAGED'
+            end
+
+            it 'creates a droplet with the appropriate docker_receipt' do
+              patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
+
+              expect(build_model.reload.droplet.docker_receipt_image).to eq('some-fake-image:tag')
             end
           end
 
