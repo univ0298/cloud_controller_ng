@@ -182,6 +182,21 @@ module VCAP::CloudController
             expect(message.errors[:lifecycle]).to include('lifecycle type must be kpack')
           end
         end
+
+        context 'build is in a failed state' do
+          let(:body) do
+            {
+              state: 'FAILED',
+              error: 'failed to stage build'
+            }
+          end
+
+          it 'allows failed state message' do
+            message = BuildUpdateMessage.new(body)
+
+            expect(message).to be_valid
+          end
+        end
       end
     end
   end

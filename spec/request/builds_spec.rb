@@ -543,7 +543,7 @@ RSpec.describe 'Builds' do
 
             it 'returns 200' do
               patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
-              expect(last_response.status).to eq(200)
+              expect(last_response.status).to eq(200), last_response.body
             end
 
             it 'updates the state to FAILED' do

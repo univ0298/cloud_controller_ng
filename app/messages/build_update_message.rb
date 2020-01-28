@@ -34,6 +34,8 @@ module VCAP::CloudController
     end
 
     def lifecycle_type_is_supported
+      return if state != BuildModel::STAGED_STATE
+
       unless [Lifecycles::KPACK].include?(lifecycle&.dig(:type))
         errors.add(:lifecycle, 'lifecycle type must be kpack')
       end
