@@ -492,41 +492,38 @@ RSpec.describe 'Builds' do
 
       context 'updating state' do
         let(:build_model) { VCAP::CloudController::BuildModel.make(package: package_model, state: VCAP::CloudController::BuildModel::STAGING_STATE) }
+        let(:request) do
+          {
+            state: 'STAGED',
+            lifecycle: {
+              type: 'kpack',
+              data: {
+                image: 'some-fake-image:tag',
+              }
+            }
+          }
+        end
 
-        context 'when the cloud_controller.admin scope is present' do
-          it 'updates the state' do
-            patch "/v3/builds/#{build_model.guid}", { state: 'STAGED' }.to_json, admin_headers
-            expect(last_response.status).to eq(200), last_response.body
-            expect(build_model.reload.state).to eq('STAGED')
-            parsed_response = MultiJson.load(last_response.body)
-            expect(parsed_response['state']).to eq('STAGED')
-          end
+        it 'allows admins to update the state' do
+          patch "/v3/builds/#{build_model.guid}", request.to_json, admin_headers
+          expect(last_response.status).to eq(200), last_response.body
+          expect(build_model.reload.state).to eq('STAGED')
+          parsed_response = MultiJson.load(last_response.body)
+          expect(parsed_response['state']).to eq('STAGED')
         end
 
         context 'when the cloud_controller.update_build_state scope is present' do
           context 'when a build was successfully completed' do
-            let(:request) do
-              {
-                state: 'STAGED',
-                lifecycle: {
-                  type: 'kpack',
-                  data: {
-                    image: 'some-fake-image:tag',
-                  }
-                }
-              }
-            end
-
             it 'updates the state to STAGED' do
               patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
               parsed_response = MultiJson.load(last_response.body)
               expect(last_response.status).to eq(200)
 
-              expect(build_model.reload.state).to eq 'STAGED'
-              expect(parsed_response['state']).to eq 'STAGED'
+              expect(build_model.reload.state).to eq('STAGED')
+              expect(parsed_response['state']).to eq('STAGED')
             end
 
-            it 'creates a droplet with the appropriate docker_receipt' do
+            it 'creates a droplet with the appropriate image reference' do
               patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
 
               expect(build_model.reload.droplet.docker_receipt_image).to eq('some-fake-image:tag')
@@ -544,21 +541,6 @@ RSpec.describe 'Builds' do
             it 'returns 200' do
               patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
               expect(last_response.status).to eq(200), last_response.body
-            end
-
-            it 'updates the state to FAILED' do
-              patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
-              parsed_response = MultiJson.load(last_response.body)
-
-              expect(build_model.reload.state).to eq 'FAILED'
-              expect(parsed_response['state']).to eq 'FAILED'
-            end
-
-            it 'updates the error' do
-              patch "/v3/builds/#{build_model.guid}", request.to_json, build_state_updater_headers
-              parsed_response = MultiJson.load(last_response.body)
-
-              expect(parsed_response['error']).to include 'failed to stage build'
             end
           end
         end
