@@ -1,18 +1,21 @@
 module VCAP::CloudController
   class Membership
-    SPACE_DEVELOPER     = 0
-    SPACE_MANAGER       = 1
-    SPACE_AUDITOR       = 2
-    ORG_USER            = 3
-    ORG_MANAGER         = 4
-    ORG_AUDITOR         = 5
-    ORG_BILLING_MANAGER = 6
+    SPACE_DEVELOPER = "space_developer"
+    SPACE_MANAGER = "space_manager"
+    SPACE_AUDITOR = "space_auditor"
+    ORG_USER = "organization_user"
+    ORG_MANAGER = "organization_manager"
+    ORG_AUDITOR = "organization_auditor"
+    ORG_BILLING_MANAGER = "organization_billing_manager"
+
+    SPACE_ROLES = %w(space_developer space_manager space_auditor)
+    ORG_ROLES = %w(organization_manager organization_billing_manager organization_auditor organization_user)
 
     def initialize(user)
       @user = user
     end
 
-    def has_any_roles?(roles, space_guid=nil, org_guid=nil)
+    def has_any_roles?(roles, space_guid = nil, org_guid = nil)
       roles = [roles] unless roles.is_a?(Array)
 
       member_guids = member_guids(roles: roles)
@@ -38,6 +41,14 @@ module VCAP::CloudController
 
     def space_guids_for_roles(roles)
       roles = [roles] unless roles.is_a?(Array)
+      space_roles = roles && SPACE_ROLES
+      org_roles = roles && ORG_ROLES
+
+      space_role_datset = Role.where(type: space_roles, user_id: @user.id).map(&:space_guid).uniq
+      org_role_based_space_guids =  Role.where(type: org_roles, user_id: @user.id).map(&:organization_guid)
+      #org_role_dataset = Organization.where() --> find a way to get the spaces guids through their belonging relationship to orgs
+
+      Role.where(type: roles)
 
       roles.map do |role|
         case role
@@ -75,15 +86,15 @@ module VCAP::CloudController
         when SPACE_DEVELOPER
           @space_developer ||=
             @user.spaces_dataset.
-            association_join(:organization).map(&:guid)
+              association_join(:organization).map(&:guid)
         when SPACE_MANAGER
           @space_manager ||=
             @user.managed_spaces_dataset.
-            association_join(:organization).map(&:guid)
+              association_join(:organization).map(&:guid)
         when SPACE_AUDITOR
           @space_auditor ||=
             @user.audited_spaces_dataset.
-            association_join(:organization).map(&:guid)
+              association_join(:organization).map(&:guid)
         when ORG_USER
           @org_user ||=
             @user.organizations_dataset.map(&:guid)
