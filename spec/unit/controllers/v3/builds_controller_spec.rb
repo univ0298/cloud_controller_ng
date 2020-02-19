@@ -386,6 +386,43 @@ RSpec.describe BuildsController, type: :controller do
       end
     end
 
+    describe 'kpack lifecycle' do
+      let(:kpack_lifecycle_data) { VCAP::CloudController::KpackLifecycleDataModel.make() }
+      let(:kpack_app_model) {
+        app = VCAP::CloudController::AppModel.make(space: space)
+        # TODO: why do we need to explicitly nil out buildpack_lifecycle_data???
+        app.buildpack_lifecycle_data = nil
+        app.kpack_lifecycle_data = kpack_lifecycle_data
+        app
+      }
+      let(:package) do
+        VCAP::CloudController::PackageModel.make(
+          app_guid: kpack_app_model.guid,
+          type: VCAP::CloudController::PackageModel::BITS_TYPE,
+          state: VCAP::CloudController::PackageModel::READY_STATE
+        )
+      end
+      let(:req_body_without_lifecycle) do
+        {
+          package: {
+            guid: package.guid
+          },
+        }
+      end
+
+      context 'when build has no lifecycle specified' do
+        context 'when app has kpack lifecycle' do
+          it 'uses the kpack lifecycle' do
+            post :create, body: req_body_without_lifecycle.to_json
+
+            expect(response.status).to eq(201)
+            expect(VCAP::CloudController::BuildModel.last.app_guid).to eq(kpack_app_model.guid)
+            expect(VCAP::CloudController::BuildModel.last.lifecycle_type).to eq(VCAP::CloudController::KpackLifecycleDataModel::LIFECYCLE_TYPE)
+          end
+        end
+      end
+    end
+
     describe 'docker lifecycle' do
       let(:docker_app_model) { VCAP::CloudController::AppModel.make(:docker, space: space) }
       let(:package) do
