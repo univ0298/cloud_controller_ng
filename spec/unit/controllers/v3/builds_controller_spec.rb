@@ -387,14 +387,7 @@ RSpec.describe BuildsController, type: :controller do
     end
 
     describe 'kpack lifecycle' do
-      let(:kpack_lifecycle_data) { VCAP::CloudController::KpackLifecycleDataModel.make() }
-      let(:kpack_app_model) {
-        app = VCAP::CloudController::AppModel.make(space: space)
-        # TODO: why do we need to explicitly nil out buildpack_lifecycle_data???
-        app.buildpack_lifecycle_data = nil
-        app.kpack_lifecycle_data = kpack_lifecycle_data
-        app
-      }
+      let(:kpack_app_model) { VCAP::CloudController::AppModel.make(:kpack, space: space) }
       let(:package) do
         VCAP::CloudController::PackageModel.make(
           app_guid: kpack_app_model.guid,
@@ -432,9 +425,11 @@ RSpec.describe BuildsController, type: :controller do
           state: VCAP::CloudController::PackageModel::READY_STATE
         )
       end
+
       let(:docker_lifecycle) do
         { type: 'docker', data: {} }
       end
+
       let(:req_body) do
         {
           package: {

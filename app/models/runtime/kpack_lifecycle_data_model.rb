@@ -21,5 +21,9 @@ module VCAP::CloudController
                 key: :build_guid,
                 primary_key: :guid,
                 without_guid_generation: true
+
+    def using_custom_buildpack?
+      false
+    end
   end
 end
