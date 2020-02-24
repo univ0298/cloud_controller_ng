@@ -25,5 +25,17 @@ module VCAP::CloudController
     def using_custom_buildpack?
       false
     end
+
+    def buildpack_models
+      return []
+    end
+
+    def first_custom_buildpack_url
+      return nil
+    end
+
+    def buildpacks
+      []
+    end
   end
 end

@@ -237,7 +237,7 @@ RSpec.describe 'Apps' do
       end
     end
 
-    describe 'KpAcꓘ app' do
+    describe 'KpAcK app' do
       it 'creates a kpack app' do
         create_request = {
             name: 'my_app',
