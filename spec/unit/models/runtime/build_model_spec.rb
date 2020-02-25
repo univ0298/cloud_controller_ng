@@ -259,6 +259,30 @@ module VCAP::CloudController
         expect(event.buildpack_name).to eq('http://some-buildpack.com')
       end
 
+      describe 'lifecycle_type validations' do
+        let(:build) { BuildModel.make }
+
+        it 'can be set to kpack' do
+          build.lifecycle_type = :kpack
+          expect(build.valid?).to be_truthy
+        end
+
+        it 'can be set to buildpack' do
+          build.lifecycle_type = :kpack
+          expect(build.valid?).to be_truthy
+        end
+
+        it 'can be set to docker' do
+          build.lifecycle_type = :docker
+          expect(build.valid?).to be_truthy
+        end
+
+        it 'can be set to anything else' do
+          build.lifecycle_type = :nonexistant_lifecycle
+          expect(build.valid?).to be_falsey
+        end
+      end
+
       describe 'metadata' do
         let!(:label) { VCAP::CloudController::BuildLabelModel.make(key_name: 'string', value: 'string2', resource_guid: build_model.guid) }
         let!(:annotation) { VCAP::CloudController::BuildAnnotationModel.make(key: 'string', value: 'string2', resource_guid: build_model.guid) }

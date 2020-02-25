@@ -46,12 +46,14 @@ module VCAP::CloudController
   AppModel.blueprint do
     name       { Sham.name }
     space      { Space.make }
+    lifecycle_type { VCAP::CloudController::Lifecycles::BUILDPACK }
     buildpack_lifecycle_data { BuildpackLifecycleDataModel.make(app: object.save) }
   end
 
   AppModel.blueprint(:kpack) do
     name { Sham.name }
     space { Space.make }
+    lifecycle_type { VCAP::CloudController::Lifecycles::KPACK }
     buildpack_lifecycle_data { nil.tap { |_| object.save } }
     kpack_lifecycle_data { KpackLifecycleDataModel.make(app: object.save) }
   end
@@ -59,12 +61,14 @@ module VCAP::CloudController
   AppModel.blueprint(:docker) do
     name { Sham.name }
     space { Space.make }
+    lifecycle_type { VCAP::CloudController::Lifecycles::DOCKER }
     buildpack_lifecycle_data { nil.tap { |_| object.save } }
   end
 
   BuildModel.blueprint do
     guid     { Sham.guid }
     app      { AppModel.make }
+    lifecycle_type { VCAP::CloudController::Lifecycles::BUILDPACK }
     state    { VCAP::CloudController::BuildModel::STAGED_STATE }
   end
 
@@ -72,6 +76,7 @@ module VCAP::CloudController
     guid     { Sham.guid }
     state    { VCAP::CloudController::DropletModel::STAGING_STATE }
     app { AppModel.make(droplet_guid: guid) }
+    lifecycle_type { VCAP::CloudController::Lifecycles::DOCKER }
     buildpack_lifecycle_data { nil.tap { |_| object.save } }
   end
 
@@ -79,6 +84,7 @@ module VCAP::CloudController
     guid     { Sham.guid }
     state    { VCAP::CloudController::DropletModel::STAGING_STATE }
     app { AppModel.make }
+    lifecycle_type { VCAP::CloudController::Lifecycles::KPACK }
     kpack_lifecycle_data { KpackLifecycleDataModel.make(build: object.save) }
     package { PackageModel.make(app: app) }
   end
@@ -87,6 +93,7 @@ module VCAP::CloudController
     guid     { Sham.guid }
     state    { VCAP::CloudController::DropletModel::STAGING_STATE }
     app { AppModel.make }
+    lifecycle_type { VCAP::CloudController::Lifecycles::BUILDPACK }
     buildpack_lifecycle_data { BuildpackLifecycleDataModel.make(build: object.save) }
   end
 

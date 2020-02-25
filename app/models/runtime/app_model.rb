@@ -74,15 +74,8 @@ module VCAP::CloudController
       validates_format APP_NAME_REGEX, :name
       validate_environment_variables
       validate_droplet_is_staged
-
+      validates_includes VCAP::CloudController::Lifecycles::ALL, :lifecycle_type
       validates_unique [:space_guid, :name], message: Sequel.lit("App with the name '#{name}' already exists.")
-    end
-
-    def lifecycle_type
-      return BuildpackLifecycleDataModel::LIFECYCLE_TYPE if self.buildpack_lifecycle_data
-      return KpackLifecycleDataModel::LIFECYCLE_TYPE if self.kpack_lifecycle_data
-
-      DockerLifecycleDataModel::LIFECYCLE_TYPE
     end
 
     def lifecycle_data
