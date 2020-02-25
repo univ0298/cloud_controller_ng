@@ -56,7 +56,7 @@ module VCAP::CloudController
     serializes_via_json :environment_variables
 
     add_association_dependencies buildpack_lifecycle_data: :destroy
-    # add_association_dependencies kpack_lifecycle_data: :destroy
+    add_association_dependencies kpack_lifecycle_data: :destroy
     add_association_dependencies labels: :destroy
     add_association_dependencies annotations: :destroy
 
