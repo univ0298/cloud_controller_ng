@@ -234,30 +234,6 @@ module VCAP::CloudController
             AppModel.make(name: name, space_guid: space.guid)
           }.to raise_error(Sequel::ValidationFailed, "App with the name 'zach' already exists.")
         end
-
-        describe 'lifecycle_type' do
-          let(:app_model) { AppModel.make }
-
-          it 'can be set to kpack' do
-            app_model.lifecycle_type = :kpack
-            expect(app_model.valid?).to be_truthy
-          end
-
-          it 'can be set to buildpack' do
-            app_model.lifecycle_type = :kpack
-            expect(app_model.valid?).to be_truthy
-          end
-
-          it 'can be set to docker' do
-            app_model.lifecycle_type = :docker
-            expect(app_model.valid?).to be_truthy
-          end
-
-          it 'cannot be set to anything else' do
-            app_model.lifecycle_type = 'nonexistant_lifecycle'
-            expect(app_model.valid?).to be_falsy
-          end
-        end
       end
 
       describe 'environment_variables' do

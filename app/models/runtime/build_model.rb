@@ -48,9 +48,11 @@ module VCAP::CloudController
     add_association_dependencies labels: :destroy
     add_association_dependencies annotations: :destroy
 
-    def validate
-      super
-      validates_includes VCAP::CloudController::Lifecycles::ALL, :lifecycle_type
+    def lifecycle_type
+      return Lifecycles::BUILDPACK if buildpack_lifecycle_data
+      return Lifecycles::KPACK if kpack_lifecycle_data
+
+      Lifecycles::DOCKER
     end
 
     def kpack_lifecycle?
