@@ -9,7 +9,8 @@ module VCAP::CloudController
     class << self
       def create(app:, user_audit_info:, message:)
         deployment = nil
-
+        process = nil
+        target_state = nil
         DeploymentModel.db.transaction do
           app.lock!
 
@@ -66,12 +67,10 @@ module VCAP::CloudController
           # Need to transition from STOPPED to STARTED to engage the ProcessObserver to desire the LRP.
           # It'd be better to do this via Diego::Runner.new(process, config).start,
           # but it is nontrivial to get that working in test.
-          process.reload.update(state: ProcessModel::STARTED)
-
-          deployment.update(deploying_web_process: process)
-
-          record_audit_event(deployment, target_state.droplet, user_audit_info, message)
         end
+        process.reload.update(state: ProcessModel::STARTED)
+        deployment.update(deploying_web_process: process)
+        record_audit_event(deployment, target_state.droplet, user_audit_info, message)
 
         deployment
       rescue RevisionResolver::NoUpdateRollback => e
