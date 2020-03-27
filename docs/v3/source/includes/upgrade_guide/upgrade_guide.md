@@ -23,7 +23,7 @@ This table shows how V2 resources map to their respective V3 counterparts. Note 
 |Quota Definitions|Organization Quotas|[Organization Quotas in V3](#organization-quotas-in-v3)
 |Resource Matches|Resource Matches|
 |Routes, Route Mappings|Routes|[Routes in V3](#routes-in-v3)|
-|Security Groups|Security Groups|
+|Security Groups|Security Groups|[Security Groups in V3](#security-groups-in-v3)|
 |Service Bindings, Service Keys|Service Keys|
 |Service Brokers|Service Brokers|
 |Service Instances, User-Provided Service Instances|Service Instances|
@@ -71,6 +71,19 @@ In V2, the route resource represented a URL that could be mapped to an app, and 
 In V3, these concepts have been collapsed into a single route resource. Now, a route can have one or more "destinations" listed on it. These represent a mapping from the route to a resource that can serve traffic (e.g. a process of an app).
 
 Read more about [routes and destinations](#routes).
+
+### Security Groups in V3
+
+In V2, the lifecycle of the security group ("running" or "staging") would
+default to "running". For example, to unbind a security group from the running
+lifecycle, one would `DELETE /v2/security_groups/:guid/spaces/:space_guid`.
+
+In V3, the lifecycle is always specified in the endpoint. For example to to
+unbind a security group from the running lifecycle, one would `DELETE
+/v3/security_groups/:guid/relationships/running_spaces/:space_guid`.
+
+- Creating
+- Delete a security group—does either v2 or v3 unbind automatically?
 
 ### Space Quotas in V3
 
