@@ -158,7 +158,7 @@ class AppsV3Controller < ApplicationController
     unprocessable_lacking_droplet! unless app.droplet
     unauthorized! unless permission_queryer.can_write_to_space?(space.guid)
     # TODO: only fail if also not `kpack` app lifecycle
-    if app.droplet.lifecycle_type == DockerLifecycleDataModel::LIFECYCLE_TYPE
+    if app.droplet.lifecycle_type == DockerLifecycleDataModel::LIFECYCLE_TYPE && app.lifecycle_type != KpackLifecycleDataModel::LIFECYCLE_TYPE
       FeatureFlag.raise_unless_enabled!(:diego_docker)
     end
 
@@ -200,7 +200,7 @@ class AppsV3Controller < ApplicationController
     unprocessable_lacking_droplet! unless app.droplet
     unauthorized! unless permission_queryer.can_write_to_space?(space.guid)
     # TODO: only fail if also not `kpack` app lifecycle
-    if app.droplet.lifecycle_type == DockerLifecycleDataModel::LIFECYCLE_TYPE
+    if is_diego_docker_required?(app)
       FeatureFlag.raise_unless_enabled!(:diego_docker)
     end
 
@@ -365,5 +365,9 @@ class AppsV3Controller < ApplicationController
 
   def instances_reporters
     CloudController::DependencyLocator.instance.instances_reporters
+  end
+
+  def is_diego_docker_required?(app)
+    app.droplet.lifecycle_type == DockerLifecycleDataModel::LIFECYCLE_TYPE && app.lifecycle_type != KpackLifecycleDataModel::LIFECYCLE_TYPE
   end
 end
