@@ -143,6 +143,15 @@ module VCAP::CloudController
       false
     end
 
+    def protocols
+      # If Kubernetes is enabled that implies that we are using istio
+      k8s_enabled = !VCAP::CloudController::Config.config.get(:kubernetes, :host_url).blank?
+      return ['http'] if k8s_enabled
+      return ['tcp'] if router_group_guid
+
+      ['http']
+    end
+
     private
 
     def validate_change_owning_organization(organization)
