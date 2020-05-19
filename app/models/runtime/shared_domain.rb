@@ -1,4 +1,5 @@
 require 'models/runtime/domain'
+require 'cloud_controller/routing_api/routing_api_client'
 
 module VCAP::CloudController
   class SharedDomain < Domain
@@ -72,7 +73,6 @@ module VCAP::CloudController
 
       if router_group_guid.present?
         if @router_group_type.nil?
-          router_group = routing_api_client.router_group(router_group_guid)
           @router_group_type = router_group.nil? ? '' : router_group.type
         end
 
@@ -80,6 +80,16 @@ module VCAP::CloudController
       end
 
       false
+    end
+
+    def router_group
+      @router_group ||= routing_api_client.router_group(router_group_guid)
+    rescue RoutingApiDisabled
+      service_unavailable!('The Routing API is disabled.')
+    rescue RoutingApi::RoutingApiUnavailable
+      service_unavailable!('The Routing API is currently unavailable. Please try again later.')
+    rescue UaaUnavailable, RoutingApi::UaaUnavailable
+      service_unavailable!('Communicating with the Routing API failed because UAA is currently unavailable. Please try again later.')
     end
 
     def addable_to_organization!(organization); end

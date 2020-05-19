@@ -67,10 +67,8 @@ class RoutesController < ApplicationController
     unprocessable_space! unless space
     unprocessable_domain! unless domain
     unauthorized! unless permission_queryer.can_write_to_space?(space.guid)
-    if domain.shared?
-      unprocessable_wildcard! if message.wildcard? && !permission_queryer.can_write_globally?
-      unprocessable_non_http_protocols(message, domain)
-    end
+    unprocessable_wildcard! if domain.shared? && message.wildcard? && !permission_queryer.can_write_globally?
+    tcp_validation(message) if domain.protocols.include?('tcp')
 
     route = RouteCreate.new(user_audit_info).create(message: message, space: space, domain: domain)
 
@@ -255,10 +253,8 @@ class RoutesController < ApplicationController
     !(domain.protocols - ['http']).empty?
   end
 
-  def unprocessable_non_http_protocols(message, domain)
-    if non_http_protocols_present?(domain)
-      unprocessable_protocol_host! if message.host
-      unprocessable_protocol_path! if message.path
-    end
+  def tcp_validation(message)
+    unprocessable_protocol_host! if message.host
+    unprocessable_protocol_path! if message.path
   end
 end
