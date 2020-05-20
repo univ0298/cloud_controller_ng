@@ -76,7 +76,7 @@ class RoutesController < ApplicationController
 
     render status: :created, json: Presenters::V3::RoutePresenter.new(route)
   rescue RouteCreate::Error => e
-    unprocessable!(e)
+    route_create_error(e)
   end
 
   def update
@@ -231,6 +231,18 @@ class RoutesController < ApplicationController
 
   def unprocessable_protocol_path!
     unprocessable!('Paths are not supported for TCP routes.')
+  end
+
+  def route_create_error(e)
+    if e.message == 'routing_api routing_api_unavailable'
+      service_unavailable!('The Routing API is currently unavailable. Please try again later.')
+    elsif e.message == 'routing_api uaa_unavailable'
+      service_unavailable!('Communicating with the Routing API failed because UAA is currently unavailable. Please try again later.')
+    elsif e.message == 'routing_api routing_api_disabled'
+      service_unavailable!('The routing API is disabled.')
+    else
+      unprocessable!(e)
+    end
   end
 
   def validate_app_guids!(apps_hash, desired_app_guids)
