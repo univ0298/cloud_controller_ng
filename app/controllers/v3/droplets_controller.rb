@@ -134,7 +134,30 @@ class DropletsController < ApplicationController
     render status: :accepted, json: Presenters::V3::DropletPresenter.new(droplet)
   end
 
+  def download
+    droplet = DropletModel.where(guid: hashed_params[:guid]).eager(:app, :space, space: :organization).first
+
+    droplet_not_found! unless droplet && permission_queryer.can_read_from_space?(droplet.space.guid, droplet.space.organization.guid)
+    if [VCAP::CloudController::DropletModel::AWAITING_UPLOAD_STATE, VCAP::CloudController::DropletModel::PROCESSING_UPLOAD_STATE].include?(droplet.state)
+      unprocessable!('Droplet has not yet been uploaded.')
+    end
+
+    VCAP::CloudController::Repositories::DropletEventRepository.record_download(
+      droplet,
+      user_audit_info,
+      droplet.app.name,
+      droplet.space.guid,
+      droplet.space.organization.guid,
+      )
+    send_droplet_blob(droplet)
+  end
+
   private
+
+  def send_droplet_blob(droplet)
+    droplet_blobstore = CloudController::DependencyLocator.instance.droplet_blobstore
+    BlobDispatcher.new(blobstore: droplet_blobstore, controller: self).send_or_redirect(guid: droplet.blobstore_key)
+  end
 
   def combine_messages(messages)
     unprocessable!("Uploaded droplet file is invalid: #{messages.join(', ')}")
