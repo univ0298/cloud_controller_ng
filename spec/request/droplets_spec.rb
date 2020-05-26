@@ -400,14 +400,11 @@ RSpec.describe 'Droplets' do
       end
     end
 
-    context 'when the user does not have privileges to download the droplet (see behaves like)' do
-    end
-
     context "when the droplet hasn't finished uploading/processing" do
       it 'returns a 422 with a helpful error message' do
         get "/v3/droplets/#{guid}/download", nil, developer_headers
         expect(last_response.status).to eq(422)
-        expect(last_response.body).to include('Droplet has not yet been uploaded.')
+        expect(last_response.body).to include('Only staged droplets can be downloaded.')
       end
     end
   end

@@ -138,8 +138,9 @@ class DropletsController < ApplicationController
     droplet = DropletModel.where(guid: hashed_params[:guid]).eager(:app, :space, space: :organization).first
 
     droplet_not_found! unless droplet && permission_queryer.can_read_from_space?(droplet.space.guid, droplet.space.organization.guid)
-    if [VCAP::CloudController::DropletModel::AWAITING_UPLOAD_STATE, VCAP::CloudController::DropletModel::PROCESSING_UPLOAD_STATE].include?(droplet.state)
-      unprocessable!('Droplet has not yet been uploaded.')
+
+    unless droplet.state == DropletModel::STAGED_STATE
+      unprocessable!('Only staged droplets can be downloaded.')
     end
 
     VCAP::CloudController::Repositories::DropletEventRepository.record_download(
