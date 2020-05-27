@@ -156,10 +156,22 @@ module VCAP::CloudController
     end
 
     def setup_loggregator_emitter
+      if @config.get(:fluent)
+        VCAP::Loggregator.fluent_logger = fluent_logger
+      end
+
       if @config.get(:loggregator) && @config.get(:loggregator, :router)
         VCAP::Loggregator.emitter = LoggregatorEmitter::Emitter.new(@config.get(:loggregator, :router), 'cloud_controller', 'API', @config.get(:index))
         VCAP::Loggregator.logger = logger
       end
+    end
+
+    def fluent_logger
+      Fluent::Logger::FluentLogger.new(nil,
+        host: @config.get(:fluent, :host) || 'localhost',
+                port: @config.get(:fluent, :port) || 24224,
+                use_nonblock: true, wait_writeable: false
+      )
     end
 
     def start_thin_server(app)

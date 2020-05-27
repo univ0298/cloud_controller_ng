@@ -16,6 +16,29 @@ module VCAP
       end
     end
 
+    describe 'when the fluentd client is set' do
+      let(:fluent_logger) { instance_double(::Fluent::Logger::FluentLogger) }
+      let(:logger) { instance_double(::Steno::Logger) }
+      let(:org) { VCAP::CloudController::Organization.make }
+      let(:space) { VCAP::CloudController::Space.make(organization: org) }
+      let(:app) { VCAP::CloudController::AppModel.make(space: space) }
+      before {
+        Loggregator.fluent_logger = fluent_logger
+        Loggregator.logger = logger
+      }
+      context 'when the app exists' do
+        it 'emits app event logs to the fluent logger' do
+          expect(fluent_logger).to receive(:post).with('api', {
+            app_id: app.guid,
+            source_type: 'API',
+            instance_id: 0,
+            log: 'log message',
+          })
+          Loggregator.emit(app.guid, 'log message')
+        end
+      end
+    end
+
     describe 'when the emitter is set' do
       let(:org) { VCAP::CloudController::Organization.make }
       let(:space) { VCAP::CloudController::Space.make(organization: org) }

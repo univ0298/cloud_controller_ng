@@ -97,6 +97,10 @@ loggregator:
   router: "127.0.0.1:3456"
   internal_url: 'http://loggregator-trafficcontroller.service.cf.internal:8081'
 
+fluent:
+  host: "fluent-forwarder-ingress"
+  port: 24224
+
 logcache:
   host: 'http://doppler.service.cf.internal'
   port: 8080

@@ -62,6 +62,12 @@ module VCAP::CloudController
         subject.run!
       end
 
+      it 'sets up fluent logger' do
+        fluent_logger = double(:fluent_logger)
+        expect(::Fluent::Logger::FluentLogger).to receive(:new).and_return(fluent_logger)
+        expect(VCAP::Loggregator).to receive(:fluent_logger=).with(fluent_logger)
+        subject.run!
+      end
       it 'starts thin server on set up bind address' do
         allow(subject).to receive(:start_thin_server).and_call_original
         expect_any_instance_of(VCAP::HostSystem).to receive(:local_ip).and_return('some_local_ip')
