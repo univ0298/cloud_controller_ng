@@ -1,48 +1,61 @@
 require 'spec_helper'
 
 module VCAP
-  RSpec.describe Loggregator do
-    describe 'when no emitter is set' do
-      before { Loggregator.emitter = nil }
+  RSpec.describe AppEventEmitter do
+    let(:logger) { instance_double(::Steno::Logger) }
+    before do
+      AppEventEmitter.logger = logger
+    end
 
+    after do
+      AppEventEmitter.logger = nil
+      AppEventEmitter.fluent_emitter = nil
+      AppEventEmitter.emitter = nil
+    end
+
+    describe 'when no emitter is set' do
       it 'does not emit errors' do
         expect_any_instance_of(LoggregatorEmitter::Emitter).not_to receive(:emit_error)
-        Loggregator.emit_error('app_id', 'error message')
+        AppEventEmitter.emit_error('app_id', 'error message')
       end
 
       it 'does not emit' do
         expect_any_instance_of(LoggregatorEmitter::Emitter).not_to receive(:emit)
-        Loggregator.emit('app_id', 'log message')
+        AppEventEmitter.emit('app_id', 'log message')
       end
     end
 
     describe 'when the fluentd client is set' do
-      let(:fluent_logger) { instance_double(::Fluent::Logger::FluentLogger) }
-      let(:logger) { instance_double(::Steno::Logger) }
+      let(:fluent_emitter) { instance_double(FluentEmitter) }
       let(:org) { VCAP::CloudController::Organization.make }
       let(:space) { VCAP::CloudController::Space.make(organization: org) }
       let(:app) { VCAP::CloudController::AppModel.make(space: space) }
       before {
-        Loggregator.fluent_logger = fluent_logger
-        Loggregator.logger = logger
+        AppEventEmitter.fluent_emitter = fluent_emitter
       }
-      context 'when the app exists' do
-        it 'emits app event logs to the fluent logger' do
-          expect(fluent_logger).to receive(:post).with('api', {
-            app_id: app.guid,
-            source_type: 'API',
-            instance_id: 0,
-            log: 'log message',
-          })
-          Loggregator.emit(app.guid, 'log message')
-        end
+
+      it 'emits app event logs to the fluent emitter' do
+        expect(fluent_emitter).to receive(:emit).with(app.guid, 'log message')
+
+        AppEventEmitter.emit(app.guid, 'log message')
+      end
+
+      it 'logs errors on failure' do
+        expect(fluent_emitter).to receive(:emit).with(app.guid, 'log message').and_raise(StandardError.new('rekt'))
+        expect(logger).to receive(:error)
+
+        AppEventEmitter.emit(app.guid, 'log message')
       end
     end
 
-    describe 'when the emitter is set' do
+    describe 'when the loggregator emitter is set' do
       let(:org) { VCAP::CloudController::Organization.make }
       let(:space) { VCAP::CloudController::Space.make(organization: org) }
       let(:app) { VCAP::CloudController::AppModel.make(space: space) }
+      let(:emitter) { LoggregatorEmitter::Emitter.new('127.0.0.1:1234', 'cloud_controller', 'API', 1) }
+      before {
+        AppEventEmitter.emitter = emitter
+      }
 
       context 'when the app exists' do
         let(:expected_tags) do
@@ -57,17 +70,15 @@ module VCAP
         end
 
         it 'emits errors to the loggregator' do
-          emitter = LoggregatorEmitter::Emitter.new('127.0.0.1:1234', 'cloud_controller', 'API', 1)
           expect(emitter).to receive(:emit_error).with(app.guid, 'error message', expected_tags)
-          Loggregator.emitter = emitter
-          Loggregator.emit_error(app.guid, 'error message')
+          AppEventEmitter.emitter = emitter
+          AppEventEmitter.emit_error(app.guid, 'error message')
         end
 
         it 'emits to the loggregator' do
-          emitter = LoggregatorEmitter::Emitter.new('127.0.0.1:1234', 'cloud_controller', 'API', 1)
           expect(emitter).to receive(:emit).with(app.guid, 'log message', expected_tags)
-          Loggregator.emitter = emitter
-          Loggregator.emit(app.guid, 'log message')
+          AppEventEmitter.emitter = emitter
+          AppEventEmitter.emit(app.guid, 'log message')
         end
       end
 
@@ -88,17 +99,15 @@ module VCAP
         end
 
         it 'emits errors to the loggregator' do
-          emitter = LoggregatorEmitter::Emitter.new('127.0.0.1:1234', 'cloud_controller', 'API', 1)
           expect(emitter).to receive(:emit_error).with(app.guid, 'error message', expected_tags)
-          Loggregator.emitter = emitter
-          Loggregator.emit_error(app.guid, 'error message')
+          AppEventEmitter.emitter = emitter
+          AppEventEmitter.emit_error(app.guid, 'error message')
         end
 
         it 'emits to the loggregator' do
-          emitter = LoggregatorEmitter::Emitter.new('127.0.0.1:1234', 'cloud_controller', 'API', 1)
           expect(emitter).to receive(:emit).with(app.guid, 'log message', expected_tags)
-          Loggregator.emitter = emitter
-          Loggregator.emit(app.guid, 'log message')
+          AppEventEmitter.emitter = emitter
+          AppEventEmitter.emit(app.guid, 'log message')
         end
       end
     end

@@ -58,16 +58,31 @@ module VCAP::CloudController
       it 'sets up loggregator emitter' do
         loggregator_emitter = double(:loggregator_emitter)
         expect(LoggregatorEmitter::Emitter).to receive(:new).and_return(loggregator_emitter)
-        expect(VCAP::Loggregator).to receive(:emitter=).with(loggregator_emitter)
+        expect(VCAP::AppEventEmitter).to receive(:emitter=).with(loggregator_emitter)
         subject.run!
       end
 
-      it 'sets up fluent logger' do
-        fluent_logger = double(:fluent_logger)
-        expect(::Fluent::Logger::FluentLogger).to receive(:new).and_return(fluent_logger)
-        expect(VCAP::Loggregator).to receive(:fluent_logger=).with(fluent_logger)
-        subject.run!
+      context 'when fluent is configured' do
+        let(:fluent_logger) { double(:fluent_logger) }
+        let(:config_file) do
+          config = YAMLConfig.safe_load_file(valid_config_file_path)
+          config['fluent'] ||= {
+            'host' => 'localhost',
+            'port' => 24224,
+          }
+          file = Tempfile.new('config')
+          file.write(YAML.dump(config))
+          file.rewind
+          file
+        end
+
+        it 'sets up fluent emitter' do
+          expect(::Fluent::Logger::FluentLogger).to receive(:new).and_return(fluent_logger)
+          expect(VCAP::AppEventEmitter).to receive(:fluent_emitter=).with(instance_of(VCAP::FluentEmitter))
+          subject.run!
+        end
       end
+
       it 'starts thin server on set up bind address' do
         allow(subject).to receive(:start_thin_server).and_call_original
         expect_any_instance_of(VCAP::HostSystem).to receive(:local_ip).and_return('some_local_ip')
