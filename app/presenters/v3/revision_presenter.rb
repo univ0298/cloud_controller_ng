@@ -72,7 +72,7 @@ module VCAP::CloudController
         end
 
         def deployable
-          revision.droplet.staged?
+          !revision.droplet.nil? && revision.droplet.staged?
         end
       end
     end
