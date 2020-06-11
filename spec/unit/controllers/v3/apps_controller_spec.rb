@@ -341,6 +341,21 @@ RSpec.describe AppsV3Controller, type: :controller do
       end
     end
 
+    context 'when an app with the same name already exists app' do
+      before do
+        allow_any_instance_of(VCAP::CloudController::AppCreate).to receive(:create).
+          and_raise(VCAP::CloudController::AppCreate::InvalidApp.new("App with the name 'some-name' already exists."))
+      end
+
+      it 'returns an UnprocessableEntity error' do
+        post :create, params: request_body, as: :json
+
+        expect(response.status).to eq 422
+        expect(response.body).to include 'NameNotUniqueInSpaceError'
+        expect(response.body).to include "App with the name 'some-name' already exists."
+      end
+    end
+
     context 'metadata' do
       context 'when the label is invalid' do
         let(:request_body) do

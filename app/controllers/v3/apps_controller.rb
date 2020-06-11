@@ -104,6 +104,10 @@ class AppsV3Controller < ApplicationController
 
     render status: :created, json: Presenters::V3::AppPresenter.new(app)
   rescue AppCreate::InvalidApp => e
+    if e.message.include?('App with the name')
+      raise CloudController::Errors::ApiError.new_from_details('NameNotUniqueInSpaceError', message.name)
+    end
+
     unprocessable!(e.message)
   end
 

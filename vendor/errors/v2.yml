@@ -103,6 +103,11 @@
   http_code: 503
   message: "%s"
 
+11001:
+  name: NameNotUniqueInSpaceError
+  http_code: 422
+  message: "App with the name '%s' already exists."
+
 20001:
   name: UserInvalid
   http_code: 400
