@@ -4,6 +4,7 @@ require 'presenters/v3/event_presenter'
 
 class EventsController < ApplicationController
   def index
+    puts query_params
     message = EventsListMessage.from_params(query_params)
     invalid_param!(message.errors.full_messages) unless message.valid?
 
