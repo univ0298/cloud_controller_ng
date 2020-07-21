@@ -21,6 +21,17 @@ module VCAP::CloudController
         allow(blobstore).to receive(:blob).with(package_guid) { blob }
       end
 
+      context 'when the guid is not provided' do
+        let(:local) { true }
+        let(:package_guid) { nil }
+
+        it 'raises BlobNotFound' do
+          expect {
+            dispatcher.send_or_redirect(guid: package_guid)
+          }.to raise_error(CloudController::Errors::BlobNotFound)
+        end
+      end
+
       context 'when the blob does not exist' do
         let(:local) { true }
         let(:blob) { nil }
