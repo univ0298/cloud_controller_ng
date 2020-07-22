@@ -37,7 +37,7 @@ module VCAP::CloudController
       let(:route) { VCAP::CloudController::Route.make(domain: shared_domain, space: space, host: 'a_host') }
       let!(:route_mapping) { VCAP::CloudController::RouteMappingModel.make(app: app1_model, process_type: process1.type, route: route) }
 
-      subject { SpaceDiffManifest.generate_diff(app_manifests, space) }
+      subject { SpaceDiffManifest.generate_diff(app_manifests, space, NamedAppManifestMessage.allowed_keys.map(&:to_s)) }
 
       context 'when a top-level field is omitted' do
         before do
@@ -49,15 +49,25 @@ module VCAP::CloudController
         end
       end
 
+      context 'when there is an unrecognized top-level field' do
+        before do
+          default_manifest['applications'][0]['foo'] = 'bar'
+        end
+
+        it 'returns an empty diff' do
+          expect(subject).to eq([])
+        end
+      end
+
       context 'when there are changes in the manifest' do
         before do
-          default_manifest['applications'][0]['new-key'] = 'hoh'
+          default_manifest['applications'][0]['random_route'] = true
           default_manifest['applications'][0]['stack'] = 'big brother'
         end
 
         it 'returns the correct diff' do
           expect(subject).to match_array([
-            { 'op' => 'add', 'path' => '/applications/0/new-key', 'value' => 'hoh' },
+            { 'op' => 'add', 'path' => '/applications/0/random_route', 'value' => true },
             { 'op' => 'replace', 'path' => '/applications/0/stack', 'was' => process1.stack.name, 'value' => 'big brother' },
           ])
         end
@@ -92,6 +102,16 @@ module VCAP::CloudController
               ]
             },
           ])
+        end
+      end
+
+      context 'when there is an unrecognized top-level field in a nested hash' do
+        before do
+          default_manifest['applications'][0]['processes'][0]['foo'] = 'bar'
+        end
+
+        it 'returns an empty diff' do
+          expect(subject).to eq([])
         end
       end
 

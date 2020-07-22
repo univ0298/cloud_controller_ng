@@ -3,7 +3,7 @@ require 'json-diff'
 
 module VCAP::CloudController
   class SpaceDiffManifest
-    def self.generate_diff(app_manifests, space)
+    def self.generate_diff(app_manifests, space, recognized_top_level_keys)
       json_diff = []
 
       app_manifests.each_with_index do |manifest_app_hash, index|
@@ -23,6 +23,8 @@ module VCAP::CloudController
         end
 
         manifest_app_hash.each do |key, value|
+          next unless recognized_top_level_keys.include?(key)
+
           existing_value = existing_app_hash[key]
 
           key_diffs = JsonDiff.diff(
