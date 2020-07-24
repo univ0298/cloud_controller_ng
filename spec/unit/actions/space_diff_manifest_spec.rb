@@ -105,7 +105,7 @@ module VCAP::CloudController
         end
       end
 
-      context 'when there is an unrecognized top-level field in a nested hash' do
+      context 'when there is an unrecognized field in a nested hash' do
         before do
           default_manifest['applications'][0]['processes'][0]['foo'] = 'bar'
         end

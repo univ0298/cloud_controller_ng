@@ -3,10 +3,61 @@ require 'json-diff'
 
 module VCAP::CloudController
   class SpaceDiffManifest
+    def self.filter_manifest_app_hash(manifest_app_hash)
+      if manifest_app_hash.key? 'sidecars'
+        manifest_app_hash['sidecars'] = manifest_app_hash['sidecars'].map do |hash|
+          hash.slice(
+            'name',
+            'command',
+            'process_types',
+            'memory'
+          )
+        end
+      end
+
+      if manifest_app_hash.key? 'processes'
+        manifest_app_hash['processes'] = manifest_app_hash['processes'].map do |hash|
+          hash.slice(
+            'type',
+            'command',
+            'disk_quota',
+            'health-check-http-endpoint',
+            'health-check-invocation-timeout',
+            'health-check-type',
+            'instances',
+            'memory',
+            'timeout'
+          )
+        end
+      end
+
+      if manifest_app_hash.key? 'services'
+        manifest_app_hash['services'] = manifest_app_hash['services'].map do |hash|
+          hash.slice(
+            'name',
+            'parameters'
+          )
+        end
+      end
+
+      if manifest_app_hash.key? 'metadata'
+        manifest_app_hash['metadata'] = manifest_app_hash['metadata'].map do |hash|
+          hash.slice(
+            'labels',
+            'annotations'
+          )
+        end
+      end
+
+      manifest_app_hash
+    end
+
     def self.generate_diff(app_manifests, space, recognized_top_level_keys)
       json_diff = []
 
       app_manifests.each_with_index do |manifest_app_hash, index|
+        manifest_app_hash = SpaceDiffManifest.filter_manifest_app_hash(manifest_app_hash)
+
         existing_app = space.app_models.find { |app| app.name == manifest_app_hash['name'] }
 
         if existing_app.nil?
