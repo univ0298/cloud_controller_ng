@@ -37,7 +37,7 @@ module VCAP::CloudController
       let(:route) { VCAP::CloudController::Route.make(domain: shared_domain, space: space, host: 'a_host') }
       let!(:route_mapping) { VCAP::CloudController::RouteMappingModel.make(app: app1_model, process_type: process1.type, route: route) }
 
-      subject { SpaceDiffManifest.generate_diff(app_manifests, space, NamedAppManifestMessage.allowed_keys.map(&:to_s)) }
+      subject { SpaceDiffManifest.generate_diff(app_manifests, space) }
 
       context 'when a top-level field is omitted' do
         before do
@@ -85,7 +85,7 @@ module VCAP::CloudController
         end
       end
 
-      context 'when there is a difference in a nested array' do
+      context 'when there is a change inside of a nested array' do
         before do
           default_manifest['applications'][0]['sidecars'] = [
             { 'name' => 'sidecar1', 'command' => 'bundle exec rake lol', 'process_types' => ['web', 'worker'] }
@@ -108,6 +108,22 @@ module VCAP::CloudController
       context 'when there is an unrecognized field in a nested hash' do
         before do
           default_manifest['applications'][0]['processes'][0]['foo'] = 'bar'
+          default_manifest['applications'][0]['services'] = [
+            {
+              'foo' => 'bar'
+            }
+          ]
+
+          default_manifest['applications'][0]['metadata'] = [
+            {
+              'foo' => 'bar'
+            }
+          ]
+          default_manifest['applications'][0]['sidecars'] = [
+            {
+              'foo' => 'bar'
+            }
+          ]
         end
 
         it 'returns an empty diff' do
