@@ -227,6 +227,8 @@ GEM
       google-protobuf (~> 3.1)
       googleapis-common-protos-types (~> 1.0.0)
     hashdiff (0.3.8)
+    honeycomb-beeline (2.1.1)
+      libhoney (~> 1.14, >= 1.14.2)
     http (4.2.0)
       addressable (~> 2.3)
       http-cookie (~> 1.0)
@@ -254,6 +256,9 @@ GEM
       http (>= 3.0, < 5.0)
       recursive-open-struct (~> 1.0, >= 1.0.4)
       rest-client (~> 2.0)
+    libhoney (1.14.4)
+      addressable (~> 2.0)
+      http (>= 2.0, < 5.0)
     listen (3.2.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
@@ -518,6 +523,7 @@ DEPENDENCIES
   fog-openstack
   googleapis-common-protos
   hashdiff
+  honeycomb-beeline
   httpclient
   json-diff
   json-schema

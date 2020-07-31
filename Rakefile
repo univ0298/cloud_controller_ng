@@ -1,3 +1,12 @@
+require_relative './lib/hc.rb'
+Honeycomb.configure do |config|
+  config.write_key = ENV['HONEYCOMB_WRITE_KEY']
+  config.dataset = ENV['HONEYCOMB_DATASET']
+end
+
+Honeycomb.start_span(name: "rakefile_load") do
+  Honeycomb.add_field_to_trace("env.PARALLEL_TEST_PROCESSORS", ENV["PARALLEL_TEST_PROCESSORS"])
+
 ENV['SINATRA_ACTIVESUPPORT_WARNING'] = 'false'
 
 if ENV['DB'] == 'postgresql'
@@ -52,4 +61,5 @@ task :check_doc_links do
       puts Rainbow('check_doc_links OK').green
     end
   end
+end
 end
