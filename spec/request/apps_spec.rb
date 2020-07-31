@@ -526,6 +526,14 @@ RSpec.describe 'Apps' do
       )
     end
 
+    it_behaves_like 'list_endpoint_with_common_filters' do
+      let(:resource_klass) { VCAP::CloudController::AppModel }
+
+      let(:api_call) do
+        lambda { |headers, filters| get "/v3/apps?#{filters}", nil, headers }
+      end
+    end
+
     context 'faceted search' do
       let(:admin_header) { headers_for(user, scopes: %w(cloud_controller.admin)) }
 

@@ -3,6 +3,7 @@ require 'messages/apps_list_message'
 
 module VCAP::CloudController
   RSpec.describe AppListFetcher do
+    subject { AppListFetcher.fetch_all(message) }
     let!(:stack) { Stack.make }
     let(:space) { Space.make(guid: 'main-space') }
     let!(:app) { AppModel.make(space_guid: space.guid, name: 'app') }
@@ -25,6 +26,9 @@ module VCAP::CloudController
     }
 
     context '#fetch_all' do
+      it_behaves_like 'filtering timestamps on creation', VCAP::CloudController::AppModel
+      it_behaves_like 'filtering timestamps on update', AppModel
+
       it 'eager loads the specified resources for all apps' do
         results = fetcher.fetch_all(message, eager_loaded_associations: [:labels, { buildpack_lifecycle_data: :buildpack_lifecycle_buildpacks }]).all
 
