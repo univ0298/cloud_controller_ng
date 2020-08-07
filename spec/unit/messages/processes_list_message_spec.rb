@@ -50,8 +50,8 @@ module VCAP::CloudController
         expect(message.requested?(:app_guids)).to be_truthy
         expect(message.requested?(:guids)).to be_truthy
         expect(message.requested?(:order_by)).to be_truthy
-        expect(message.requested?(:created_ats)).to be_truthy
         expect(message.requested?(:updated_ats)).to be_truthy
+        expect(message.requested?(:created_ats)).to be_truthy
       end
     end
 

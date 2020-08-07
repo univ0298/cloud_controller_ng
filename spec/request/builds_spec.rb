@@ -338,6 +338,14 @@ RSpec.describe 'Builds' do
       end
     end
 
+    it_behaves_like 'list_endpoint_with_common_filters' do
+      let(:resource_klass) { VCAP::CloudController::Builds }
+
+      let(:api_call) do
+        lambda { |headers, filters| get "/v3/builds?#{filters}", nil, headers }
+      end
+    end
+
     context 'when there are other spaces the developer cannot see' do
       let(:non_accessible_space) { VCAP::CloudController::Space.make }
       let(:non_accessible_app_model) { VCAP::CloudController::AppModel.make(space_guid: non_accessible_space.guid, name: 'other-app') }
