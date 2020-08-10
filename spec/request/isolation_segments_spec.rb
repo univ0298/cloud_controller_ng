@@ -409,10 +409,10 @@ RSpec.describe 'IsolationSegmentModels' do
 
     it_behaves_like 'list_endpoint_with_common_filters' do
       let(:resource_klass) { VCAP::CloudController::IsolationSegmentModel }
-
       let(:api_call) do
         lambda { |headers, filters| get "/v3/isolation_segments?#{filters}", nil, headers }
       end
+      let(:headers) { admin_header }
     end
 
     context 'label_selector' do

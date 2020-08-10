@@ -3,11 +3,6 @@ require 'fetchers/base_list_fetcher'
 module VCAP::CloudController
   class AppBuildsListFetcher < BaseListFetcher
     class << self
-      # def initialize(app_guid, message)
-      #   @app_guid = app_guid
-      #   @message = message
-      # end
-
       def fetch_all(app_guid, message)
         dataset = BuildModel.dataset.where(app_guid: app_guid)
         filter(message, dataset)

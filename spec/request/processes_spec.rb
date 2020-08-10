@@ -86,6 +86,7 @@ RSpec.describe 'Processes' do
       let(:api_call) do
         lambda { |headers, filters| get "/v3/processes?#{filters}", nil, headers }
       end
+      let(:headers) { admin_header }
     end
 
     it 'returns a paginated list of processes' do

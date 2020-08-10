@@ -6,8 +6,6 @@ module VCAP::CloudController
       :app_guids,
       :package_guids,
       :states,
-      :created_ats,
-      :updated_ats
     ]
 
     validates_with NoAdditionalParamsValidator
@@ -15,11 +13,9 @@ module VCAP::CloudController
     validates :app_guids, array: true, allow_nil: true
     validates :package_guids, array: true, allow_nil: true
     validates :states, array: true, allow_nil: true
-    validates :created_ats, timestamp: true, allow_nil: true
-    validates :updated_ats, timestamp: true, allow_nil: true
 
     def self.from_params(params)
-      super(params, %w(app_guids package_guids states created_ats updated_ats))
+      super(params, %w(app_guids package_guids states))
     end
   end
 end

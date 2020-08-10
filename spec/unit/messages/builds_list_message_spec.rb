@@ -11,7 +11,7 @@ module VCAP::CloudController
           'package_guids' => 'packageguid1,packageguid2',
           'page'      => 1,
           'per_page'  => 5,
-          'ORDER_BY'  => 'created_at',
+          'order_by'  => 'created_at',
           'label_selector' => 'key=value',
           'created_ats'        => "#{Time.now.utc.iso8601},#{Time.now.utc.iso8601}",
           'updated_ats'        => { gt: Time.now.utc.iso8601 }
