@@ -1061,6 +1061,14 @@ RSpec.describe 'Deployments' do
 
           it_behaves_like 'permissions for list endpoint', ALL_PERMISSIONS
 
+          it_behaves_like 'list_endpoint_with_common_filters' do
+            let(:resource_klass) { VCAP::CloudController::DeploymentModel }
+            let(:api_call) do
+              lambda { |headers, filters| get "/v3/deployments?#{filters}", nil, headers }
+            end
+            let(:headers) { admin_headers }
+          end
+
           context 'pagination' do
             let(:pagination_hsh) do
               {
