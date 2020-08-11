@@ -89,6 +89,9 @@ module Kpack
             }
           },
           build: {
+            bindings: [
+              { name: 'fake', metadataRef: { name: 'fake-binding-metadata' }, secretRef: { name: 'fake-binding-secret' } },
+            ],
             env: get_environment_variables(staging_details),
           }
         }
