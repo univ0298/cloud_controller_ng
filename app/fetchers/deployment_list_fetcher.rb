@@ -23,7 +23,7 @@ module VCAP::CloudController
           app_dataset = app_dataset.where(guid: message.app_guids)
         end
 
-        dataset.where(app: app_dataset)
+        dataset = dataset.where(app: app_dataset)
         super(message, dataset, DeploymentModel)
       end
 
