@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-module VCAP::RestAPI
-  RSpec.describe VCAP::RestAPI::Query do
-    include VCAP::RestAPI
+module VCAP::Framework::RestAPI
+  RSpec.describe VCAP::Framework::RestAPI::Query do
+    include VCAP::Framework::RestAPI
 
     class Author < Sequel::Model
       one_to_many :books

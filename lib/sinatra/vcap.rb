@@ -1,4 +1,5 @@
 require 'vcap/rest_api'
+require 'framework/framework'
 require 'vcap/request'
 require 'presenters/error_presenter'
 require 'sinatra/reloader'

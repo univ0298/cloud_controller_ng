@@ -1,4 +1,4 @@
-module VCAP::RestAPI
+module VCAP::Framework::RestAPI
   # A NamedAttribute defines an attribute used in a rest controller
   #
   # These are ultimately used to capture the attributes allowed to be
@@ -11,7 +11,7 @@ module VCAP::RestAPI
     # Create a NamedAttribute.  By default, the attribute is considered to
     # be required.
     #
-    # @param [Symbol] Name of the attribute.
+    # @param [Symbol] name Name of the attribute.
     #
     # @option opts [[Symbol]] :exclude_in One or more symbols representing
     # an operation types that the attribute is allowed in, e.g.
@@ -71,7 +71,7 @@ module VCAP::RestAPI
     #
     # @param [Symbol] name Name of the attribute.
     #
-    # @param [Class] The Membrane schema or class type of the named attribute.
+    # @param [Class] schema The Membrane schema or class type of the named attribute.
     #
     # @option opts [[Symbol]] :exclude_in One or more symbols representing
     # an operation types that the attribute is allowed in, e.g.

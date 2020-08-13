@@ -1,13 +1,13 @@
 require 'vcap/json_message'
 require 'rfc822'
 
-module VCAP
+module VCAP::Framework
   module RestAPI
     class Message < JsonMessage
       # The schema validator used by class `JsonMessage` calls the `inspect`
       # method on the regexp object to get a description of the regex. We tweak
       # the regexp object so that the `inspect` method generates a readable
-      # description for us through `VCAP::RestAPI::Message#schema_doc` method.
+      # description for us through `schema_doc` method.
       def self.readable_regexp(regexp, description, default_error_message)
         regexp.define_singleton_method(:inspect) do
           description

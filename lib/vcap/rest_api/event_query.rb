@@ -1,4 +1,6 @@
-module VCAP::RestAPI
+require 'framework/framework'
+
+module VCAP::Framework::RestAPI
   #
   # Use this class to implement special-cases for querying against
   # the Event Controller

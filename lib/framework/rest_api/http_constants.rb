@@ -1,4 +1,4 @@
-module VCAP::RestAPI
+module VCAP::Framework::RestAPI
   module HTTP
     CONTINUE                         = 100
     SWITCHING_PROTOCOL               = 101

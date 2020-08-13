@@ -1,7 +1,7 @@
 require 'cloud_controller/security/security_context_configurer'
 
 module VCAP::CloudController
-  include VCAP::RestAPI
+  include VCAP::Framework::RestAPI
 
   class FrontController < Sinatra::Base
     register Sinatra::VCAP
