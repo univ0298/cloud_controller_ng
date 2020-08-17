@@ -19,6 +19,14 @@ module VCAP::CloudController
           dataset = dataset.where(guid: message.guids)
         end
 
+        if message.requested?(:service_instance_types)
+          dataset = dataset.where(service_instance_type: message.service_instance_types)
+        end
+
+        if message.requested?(:service_offering_guids)
+          dataset = dataset.where(service_guid: message.service_offering_guids)
+        end
+
         super(message, dataset, ServiceUsageEvent)
       end
 
