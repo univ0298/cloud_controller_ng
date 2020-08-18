@@ -379,8 +379,8 @@ RSpec.describe 'Apps' do
             include:   'space',
             lifecycle_type:   'buildpack',
             label_selector:   'foo,bar',
-            created_ats: [],
-            updated_ats: [],
+            created_ats:  "#{Time.now.utc.iso8601},#{Time.now.utc.iso8601}",
+            updated_ats: { gt: Time.now.utc.iso8601 },
           }
         end
       end

@@ -31,8 +31,6 @@ module VCAP::CloudController
 
     describe '#fetch_all' do
       let(:app_guid) { app_in_space1.guid }
-      it_behaves_like 'filtering timestamps on creation', BuildModel
-      it_behaves_like 'filtering timestamps on update', BuildModel
 
       context 'when looking at app_in_space1' do
         it 'returns a Sequel::Dataset' do

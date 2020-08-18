@@ -30,7 +30,7 @@ RSpec.describe 'buildpacks' do
           stacks: 'cf',
           label_selector: 'foo,bar',
           created_ats:  "#{Time.now.utc.iso8601},#{Time.now.utc.iso8601}",
-          updated_ats: { gt: Time.now.utc.iso8601 }
+          updated_ats: { gt: Time.now.utc.iso8601 },
         }
       end
     end
