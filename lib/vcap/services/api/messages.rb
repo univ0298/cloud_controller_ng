@@ -8,6 +8,8 @@ require 'framework/rest_api/json_message'
 module VCAP
   module Services
     module Api
+      JsonMessage = VCAP::Framework::RestAPI::JsonMessage
+
       class EmptyRequest < JsonMessage
       end
       EMPTY_REQUEST = EmptyRequest.new.freeze

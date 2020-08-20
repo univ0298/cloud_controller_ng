@@ -184,7 +184,7 @@ module VCAP::Services::Api
 
         begin
           err = ServiceErrorResponse.decode(body)
-        rescue JsonMessage::Error
+        rescue VCAP::Framework::RestAPI::JsonMessage::Error
           raise UnexpectedResponse.new("Can't decode gateway response. status code: #{code}, response body: #{body}")
         end
 

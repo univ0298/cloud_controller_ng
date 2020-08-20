@@ -43,7 +43,7 @@ module VCAP::CloudController
       define_route :get, '/test_database_error', :test_database_error
 
       def test_json_error
-        raise JsonMessage::Error.new('error')
+        raise VCAP::Framework::RestAPI::JsonMessage::Error.new('error')
       end
       define_route :get, '/test_json_error', :test_json_error
 
