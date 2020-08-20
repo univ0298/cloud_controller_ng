@@ -3,7 +3,7 @@ require 'uri'
 
 require 'vcap/services/api/const'
 require 'membrane'
-require 'vcap/json_message'
+require 'framework/rest_api/json_message'
 
 module VCAP
   module Services

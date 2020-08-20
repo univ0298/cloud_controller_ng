@@ -1,6 +1,6 @@
 # Copyright (c) 2009-2012 VMware, Inc
 require 'spec_helper'
-require 'vcap/json_message'
+require 'framework/rest_api/json_message'
 
 RSpec.describe JsonMessage::Field do
   it 'should raise an error when a required field is defined with a default' do

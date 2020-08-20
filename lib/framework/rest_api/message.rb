@@ -1,4 +1,4 @@
-require 'vcap/json_message'
+require 'framework/rest_api/json_message'
 require 'rfc822'
 
 module VCAP::Framework
