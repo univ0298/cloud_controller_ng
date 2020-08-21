@@ -1,4 +1,4 @@
-module VCAP::CloudController::RestController
+module VCAP::Framework::RestController
   class SecureEagerLoader
     def eager_load_dataset(dataset, starting_controller_class, default_visibility_filter, additional_visibility_filters, depth)
       eager_load_hash = build_eager_load_hash(

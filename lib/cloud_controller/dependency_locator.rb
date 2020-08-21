@@ -510,7 +510,7 @@ module CloudController
     end
 
     def create_object_renderer(opts={})
-      eager_loader = VCAP::CloudController::RestController::SecureEagerLoader.new
+      eager_loader = VCAP::Framework::RestController::SecureEagerLoader.new
       serializer = VCAP::CloudController::RestController::PreloadedObjectSerializer.new
       object_transformer = opts[:object_transformer]
 
@@ -521,7 +521,7 @@ module CloudController
     end
 
     def create_paginated_collection_renderer(opts={})
-      eager_loader = opts[:eager_loader] || VCAP::CloudController::RestController::SecureEagerLoader.new
+      eager_loader = opts[:eager_loader] || VCAP::Framework::RestController::SecureEagerLoader.new
       serializer = opts[:serializer] || VCAP::CloudController::RestController::PreloadedObjectSerializer.new
       max_results_per_page = opts[:max_results_per_page] || config.get(:renderer, :max_results_per_page)
       default_results_per_page = opts[:default_results_per_page] || config.get(:renderer, :default_results_per_page)

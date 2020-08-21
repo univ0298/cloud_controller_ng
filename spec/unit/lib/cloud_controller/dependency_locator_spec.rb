@@ -248,7 +248,7 @@ RSpec.describe CloudController::DependencyLocator do
 
   describe '#object_renderer' do
     it 'returns paginated collection renderer configured via config' do
-      eager_loader = instance_of(VCAP::CloudController::RestController::SecureEagerLoader)
+      eager_loader = instance_of(VCAP::Framework::RestController::SecureEagerLoader)
       serializer = instance_of(VCAP::CloudController::RestController::PreloadedObjectSerializer)
       opts = { max_inline_relations_depth: 100_002, object_transformer: nil }
 
@@ -266,7 +266,7 @@ RSpec.describe CloudController::DependencyLocator do
 
   describe '#paginated_collection_renderer' do
     it 'returns paginated collection renderer configured via config' do
-      eager_loader = instance_of(VCAP::CloudController::RestController::SecureEagerLoader)
+      eager_loader = instance_of(VCAP::Framework::RestController::SecureEagerLoader)
       serializer = instance_of(VCAP::CloudController::RestController::PreloadedObjectSerializer)
       opts = {
         max_results_per_page: 100_000,
@@ -289,7 +289,7 @@ RSpec.describe CloudController::DependencyLocator do
 
   describe '#large_paginated_collection_renderer' do
     it 'returns paginated collection renderer configured via config with a max of 10,000 results per page' do
-      eager_loader = instance_of(VCAP::CloudController::RestController::SecureEagerLoader)
+      eager_loader = instance_of(VCAP::Framework::RestController::SecureEagerLoader)
       serializer = instance_of(VCAP::CloudController::RestController::PreloadedObjectSerializer)
       opts = {
         max_results_per_page: 10,

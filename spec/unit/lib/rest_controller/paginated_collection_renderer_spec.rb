@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 module VCAP::CloudController::RestController
+  include VCAP::Framework::RestController
   RSpec.describe PaginatedCollectionRenderer do
     let(:controller) { VCAP::CloudController::TestModelsController }
     let(:dataset) { VCAP::CloudController::TestModel.dataset }

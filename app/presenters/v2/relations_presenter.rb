@@ -49,7 +49,7 @@ module CloudController
 
             associated_model_instance = get_preloaded_association_contents!(obj, association)
 
-            if association.is_a?(VCAP::CloudController::RestController::ControllerDSL::ToOneAttribute)
+            if association.is_a?(VCAP::Framework::RestController::ControllerDSL::ToOneAttribute)
               serialize_to_one_relationship(response, associated_model_instance, associated_controller, relationship_name, depth, opts, parents, orphans)
             else
               serialize_to_many_relationship(response, associated_model_instance, associated_controller, relationship_name, depth, opts, parents, orphans)
@@ -86,7 +86,7 @@ module CloudController
         end
 
         def add_relationship_url_to_response(response, controller, associated_controller, relationship_name, association, obj)
-          if association.is_a?(VCAP::CloudController::RestController::ControllerDSL::ToOneAttribute)
+          if association.is_a?(VCAP::Framework::RestController::ControllerDSL::ToOneAttribute)
             associated_model_instance = get_preloaded_association_contents!(obj, association)
             if associated_model_instance
               associated_url = associated_controller.url_for_guid(associated_model_instance.guid, associated_model_instance)

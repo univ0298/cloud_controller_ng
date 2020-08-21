@@ -328,6 +328,7 @@ module VCAP::CloudController::RestController
 
     class << self
       include VCAP::CloudController
+      include VCAP::Framework::RestController
 
       attr_accessor :attributes
       attr_accessor :to_many_relationships
