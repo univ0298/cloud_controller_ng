@@ -1,4 +1,4 @@
-module VCAP::CloudController::RestController
+module VCAP::Framework::RestController
   module Routes
     def self.included(base)
       base.extend(ClassMethods)
