@@ -1,7 +1,7 @@
 require 'addressable/uri'
-require 'cloud_controller/rest_controller/order_applicator'
+require 'framework/rest_controller/order_applicator'
 
-module VCAP::CloudController::RestController
+module VCAP::Framework::RestController
   class PaginatedCollectionRenderer
     attr_reader :collection_transformer
 

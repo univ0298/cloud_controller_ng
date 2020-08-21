@@ -1,7 +1,6 @@
 require 'spec_helper'
 
-module VCAP::CloudController::RestController
-  include VCAP::Framework::RestController
+module VCAP::Framework::RestController
   RSpec.describe ObjectRenderer do
     subject(:renderer) { ObjectRenderer.new(eager_loader, serializer, renderer_opts) }
     let(:eager_loader) { SecureEagerLoader.new }

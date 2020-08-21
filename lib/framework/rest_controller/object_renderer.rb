@@ -1,6 +1,6 @@
 require 'addressable/uri'
 
-module VCAP::CloudController::RestController
+module VCAP::Framework::RestController
   class ObjectRenderer
     attr_reader :object_transformer
 

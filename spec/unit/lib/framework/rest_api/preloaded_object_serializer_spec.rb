@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-module VCAP::CloudController
-  RSpec.describe RestController::PreloadedObjectSerializer do
+module VCAP::Framework::RestController
+  RSpec.describe PreloadedObjectSerializer do
     describe '#serialize' do
       let(:object) { double(:object) }
       let(:presenter) { instance_double(::CloudController::Presenters::V2::DefaultPresenter, to_hash: serialized_object) }
@@ -13,7 +13,7 @@ module VCAP::CloudController
       it 'finds calls #to_hash on a presenter for the object' do
         allow(::CloudController::Presenters::V2::PresenterProvider).to receive(:presenter_for).with(object).
           and_return(presenter)
-        expect(RestController::PreloadedObjectSerializer.new.serialize(controller, object, opts, orphans)).to be(serialized_object)
+        expect(PreloadedObjectSerializer.new.serialize(controller, object, opts, orphans)).to be(serialized_object)
         expect(presenter).to have_received(:to_hash).with(controller, object, opts, 0, [], orphans)
       end
     end

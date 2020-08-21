@@ -6,8 +6,8 @@ require 'repositories/route_event_repository'
 require 'repositories/user_event_repository'
 require 'kubernetes/api_client'
 require 'kubernetes/route_resource_manager'
-require 'cloud_controller/rest_controller/object_renderer'
-require 'cloud_controller/rest_controller/paginated_collection_renderer'
+require 'framework/rest_controller/object_renderer'
+require 'framework/rest_controller/paginated_collection_renderer'
 require 'cloud_controller/upload_handler'
 require 'cloud_controller/blob_sender/nginx_blob_sender'
 require 'cloud_controller/blob_sender/default_blob_sender'
@@ -511,10 +511,10 @@ module CloudController
 
     def create_object_renderer(opts={})
       eager_loader = VCAP::Framework::RestController::SecureEagerLoader.new
-      serializer = VCAP::CloudController::RestController::PreloadedObjectSerializer.new
+      serializer = VCAP::Framework::RestController::PreloadedObjectSerializer.new
       object_transformer = opts[:object_transformer]
 
-      VCAP::CloudController::RestController::ObjectRenderer.new(eager_loader, serializer, {
+      VCAP::Framework::RestController::ObjectRenderer.new(eager_loader, serializer, {
         max_inline_relations_depth: config.get(:renderer, :max_inline_relations_depth),
         object_transformer: object_transformer,
       })
@@ -522,13 +522,13 @@ module CloudController
 
     def create_paginated_collection_renderer(opts={})
       eager_loader = opts[:eager_loader] || VCAP::Framework::RestController::SecureEagerLoader.new
-      serializer = opts[:serializer] || VCAP::CloudController::RestController::PreloadedObjectSerializer.new
+      serializer = opts[:serializer] || VCAP::Framework::RestController::PreloadedObjectSerializer.new
       max_results_per_page = opts[:max_results_per_page] || config.get(:renderer, :max_results_per_page)
       default_results_per_page = opts[:default_results_per_page] || config.get(:renderer, :default_results_per_page)
       max_inline_relations_depth = opts[:max_inline_relations_depth] || config.get(:renderer, :max_inline_relations_depth)
       collection_transformer = opts[:collection_transformer]
 
-      VCAP::CloudController::RestController::PaginatedCollectionRenderer.new(eager_loader, serializer, {
+      VCAP::Framework::RestController::PaginatedCollectionRenderer.new(eager_loader, serializer, {
         max_results_per_page: max_results_per_page,
         default_results_per_page: default_results_per_page,
         max_inline_relations_depth: max_inline_relations_depth,

@@ -443,7 +443,7 @@ module VCAP::CloudController
     end
 
     def create_paginated_collection_renderer(service_instance)
-      VCAP::CloudController::RestController::PaginatedCollectionRenderer.new(
+      VCAP::Framework::RestController::PaginatedCollectionRenderer.new(
         ServiceInstanceSharedToEagerLoader.new,
         ServiceInstanceSharedToSerializer.new(service_instance),
         {
