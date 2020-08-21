@@ -4,3 +4,4 @@ module VCAP
 end
 
 require 'framework/rest_api'
+require 'framework/rest_controller'
