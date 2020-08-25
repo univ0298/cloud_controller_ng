@@ -6,6 +6,8 @@ module VCAP::CloudController
       :names,
       :service_instance_guids,
       :service_instance_names,
+      :service_plan_names,
+      :service_offering_names,
       :app_guids,
       :app_names,
       :include

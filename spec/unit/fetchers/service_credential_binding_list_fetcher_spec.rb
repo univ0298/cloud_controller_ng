@@ -111,6 +111,22 @@ module VCAP
             end
           end
 
+          context 'service plan names' do
+            let(:params) { { 'service_plan_names' => app_binding.service_plan.name.to_s } }
+            it 'returns the right result' do
+              bindings = fetcher.fetch(space_guids: :all, message: message).all
+              expect(bindings.map(&:guid)).to contain_exactly(app_binding.guid)
+            end
+          end
+
+          context 'service offering names' do
+            let(:params) { { 'service_offering_names' => app_binding.service.name.to_s } }
+            it 'returns the right result' do
+              bindings = fetcher.fetch(space_guids: :all, message: message).all
+              expect(bindings.map(&:guid)).to contain_exactly(app_binding.guid)
+            end
+          end
+
           context 'type' do
             context 'app' do
               let(:params) { { 'type' => 'app' } }

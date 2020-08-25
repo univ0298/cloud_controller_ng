@@ -31,6 +31,8 @@ module VCAP
         app_name
         app_guid
         type
+        service_plan_name
+        service_offering_name
       }.freeze
 
       def filters_from_message(message)
