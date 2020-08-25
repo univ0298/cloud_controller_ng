@@ -1,4 +1,5 @@
 require 'securerandom'
+require 'vcap/request'
 require 'active_support/core_ext/string/access'
 
 module CloudFoundry
