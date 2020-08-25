@@ -1,5 +1,3 @@
-require 'vcap/rest_api'
-require 'framework/framework'
 require 'presenters/error_presenter'
 require 'sinatra/reloader'
 require 'securerandom'

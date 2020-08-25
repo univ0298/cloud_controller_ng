@@ -10,7 +10,7 @@ require 'uaa/token_coder'
 
 module VCAP; end
 
-require 'sinatra/vcap'
+require 'framework/framework'
 require File.expand_path('../config/environment', __dir__)
 
 require 'yajl'
