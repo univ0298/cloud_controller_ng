@@ -1,5 +1,4 @@
 require 'framework/sequel_plugins'
-require 'sequel_plugins/vcap_relations'
 require 'sequel_plugins/vcap_guid'
 require 'sequel_plugins/update_or_create'
 require 'sequel_plugins/vcap_user_group'
