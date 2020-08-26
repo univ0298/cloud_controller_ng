@@ -1,5 +1,4 @@
 require 'framework/sequel_plugins'
-require 'sequel_plugins/vcap_serialization'
 require 'sequel_plugins/vcap_normalization'
 require 'sequel_plugins/vcap_relations'
 require 'sequel_plugins/vcap_guid'

@@ -46,7 +46,7 @@ module Sequel::Plugins::VcapSerialization
     # Update the model instance from the supplied json string.  Only update
     # attributes specified by import_attributes.
     #
-    # @param [String] Json encoded representation of the updated attributes.
+    # @param [String] json Json encoded representation of the updated attributes.
     #
     # @option opts [Array<String>] :only Only import an attribute if it is both
     # included in import_attributes and in the :only option.
@@ -58,7 +58,7 @@ module Sequel::Plugins::VcapSerialization
     # Update the model instance from the supplied hash.  Only update
     # attributes specified by import_attributes.
     #
-    # @param [Hash] Hash of the updated attributes.
+    # @param [Hash] hash Hash of the updated attributes.
     #
     # @option opts [Array<String>] :only Only import an attribute if it is both
     # included in import_attributes and in the :only option.
@@ -77,7 +77,7 @@ module Sequel::Plugins::VcapSerialization
     # Create a new model instance from the supplied json string.  Only include
     # attributes specified by import_attributes.
     #
-    # @param [String] Json encoded representation attributes.
+    # @param [String] json Json encoded representation attributes.
     #
     # @option opts [Array<String>] :only Only include an attribute if it is
     # both included in import_attributes and in the :only option.
@@ -91,7 +91,7 @@ module Sequel::Plugins::VcapSerialization
     # Create and save a new model instance from the supplied json string.
     # Only include attributes specified by import_attributes.
     #
-    # @param [Hash] Hash of the attributes.
+    # @param [Hash] hash Hash of the attributes.
     #
     # @option opts [Array<String>] :only Only include an attribute if it is
     # both included in import_attributes and in the :only option.
@@ -104,7 +104,7 @@ module Sequel::Plugins::VcapSerialization
 
     # Set the default order during a to_json on the model class.
     #
-    # @param [Array<Symbol>] List of attributes to include when serializing to
+    # @param [Array<Symbol>] attributes List of attributes to include when serializing to
     # json or a hash.
     def export_attributes(*attributes)
       self.export_attrs = attributes.freeze
@@ -116,7 +116,7 @@ module Sequel::Plugins::VcapSerialization
       self.export_attrs_from_methods = hash.freeze
     end
 
-    # @param [Array<Symbol>] List of attributes to include when importing
+    # @param [Array<Symbol>] attributes List of attributes to include when importing
     # from json or a hash.
     def import_attributes(*attributes)
       self.import_attrs = attributes
