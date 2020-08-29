@@ -3,6 +3,7 @@ module CloudController
     module V2
       class ServiceKeyPresenter < DefaultPresenter
         extend PresenterProvider
+        include Redactable
 
         present_for_class 'VCAP::CloudController::ServiceKey'
 

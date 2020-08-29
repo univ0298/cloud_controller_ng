@@ -18,6 +18,8 @@ module CloudController
   end
 end
 
+require_relative 'mixins/redactable'
+
 require_relative 'base_presenter'
 require_relative 'default_presenter'
 require_relative 'relations_presenter'
