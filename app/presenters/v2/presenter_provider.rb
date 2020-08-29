@@ -20,7 +20,7 @@ end
 
 require_relative 'mixins/redactable'
 
-require_relative 'base_presenter'
+require 'framework/presenters/base_presenter'
 require_relative 'default_presenter'
 require_relative 'relations_presenter'
 
