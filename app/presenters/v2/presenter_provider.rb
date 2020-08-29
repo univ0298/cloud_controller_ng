@@ -1,3 +1,6 @@
+require 'framework/presenters'
+require_relative 'v2'
+
 module CloudController
   module Presenters
     module V2
@@ -20,7 +23,6 @@ end
 
 require_relative 'mixins/redactable'
 
-require 'framework/presenters/base_presenter'
 require_relative 'default_presenter'
 require_relative 'relations_presenter'
 

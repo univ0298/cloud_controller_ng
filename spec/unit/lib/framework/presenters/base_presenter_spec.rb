@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-module CloudController::Presenters::V2
+module VCAP::Framework::Presenters
   RSpec.describe BasePresenter do
     subject { BasePresenter.new }
     let(:controller) { double(:controller, url_for_guid: 'controller-url') }
