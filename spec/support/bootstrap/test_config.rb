@@ -59,6 +59,9 @@ module TestConfig
           app_package_directory_key: 'cc-packages',
           fog_connection: fog_connection,
           max_valid_packages_stored: 42,
+          # image_registry: {
+          #   base_path: 'hub.example.com/user'
+          # }
         },
         buildpacks: {
           buildpack_directory_key: 'cc-buildpacks',
@@ -79,7 +82,7 @@ module TestConfig
 
     def configure_components(config)
       # Always enable Fog mocking (except when using a local provider, which Fog can't mock).
-      if context != :route_syncer && context != :deployment_updater
+      if context != :route_syncer && context != :deployment_updater && config.get(:packages, :image_registry).nil?
         res_pool_connection_provider = config.get(:resource_pool, :fog_connection)[:provider].downcase
         packages_connection_provider = config.get(:packages, :fog_connection)[:provider].downcase
         Fog.mock! unless res_pool_connection_provider == 'local' || packages_connection_provider == 'local'
