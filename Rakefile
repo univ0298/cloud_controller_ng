@@ -10,7 +10,8 @@ require File.expand_path('config/boot', __dir__)
 require 'yaml'
 require 'sequel'
 require 'steno'
-require 'cloud_controller'
+# require 'cloud_controller'
+require File.expand_path('config/environment', __dir__)
 require_relative 'lib/tasks/rake_config'
 
 Rails.application.load_tasks
