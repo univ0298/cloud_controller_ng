@@ -179,7 +179,7 @@ module VCAP::CloudController
             port: Integer
           },
 
-          db_encryption_key: enum(String, NilClass),
+          optional(:db_encryption_key) => String,
 
           optional(:database_encryption) => {
               keys: Hash,
