@@ -62,7 +62,33 @@ Name | Type | Description |
 **metadata.labels** | [_label object_](#labels) | Labels applied to the service broker
 **metadata.annotations**  | [_annotation object_](#annotations) | Annotations applied to the service broker
 
-<%= yield_content :service_broker_credentials_object %>
+#### The authentication object
+
+Name | Type | Description
+---- | ---- | -----------
+**type** | _string_ | Type of the authentication mechanisms that can be used. Valid value is `basic`.
+**credentials** | _object_ | Credentials for given authentication type.
+
+```
+Example basic authentication
+```
+
+```json
+{
+  "type": "basic",
+  "credentials": {
+    "username": "admin",
+    "password": "secretpassw0rd"
+  }
+}
+```
+
+##### Basic authentication credentials
+
+Name | Type | Description
+---- | ---- | -----------
+**username** | _string_ | The username with which to authenticate against the service broker.
+**password** | _string_ | The password with which to authenticate against the service broker.
 
 #### Permitted roles
  |

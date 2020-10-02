@@ -109,26 +109,7 @@
 }
 <% end %>
 
-<% content_for :single_isolation_segment do %>
-{
-   "guid": "b19f6525-cbd3-4155-b156-dc0c2a431b4c",
-   "name": "an_isolation_segment",
-   "created_at": "2016-10-19T20:25:04Z",
-   "updated_at": "2016-11-08T16:41:26Z",
-   "links": {
-      "self": {
-         "href": "https://api.example.org/v3/isolation_segments/b19f6525-cbd3-4155-b156-dc0c2a431b4c"
-      },
-      "organizations": {
-         "href": "https://api.example.org/v3/isolation_segments/b19f6525-cbd3-4155-b156-dc0c2a431b4c/organizations"
-      }
-   },
-   "metadata": {
-      "annotations": {},
-      "labels": {}
-   }
-}
-<% end %>
+<% content_for :single_isolation_segment, File.read(__dir__ + '/examples/isolation_segments/single_isolation_segment.json') %>
 
 <% content_for :isolation_segment_with_name do |name = 'a_segment'| %>
 {
@@ -151,41 +132,6 @@
 }
 <% end %>
 
-<% content_for :relationships_organizations do %>
-{
-  "data": [
-    {
-      "guid": "68d54d31-9b3a-463b-ba94-e8e4c32edbac"
-    },
-    {
-      "guid": "b19f6525-cbd3-4155-b156-dc0c2a431b4c"
-    }
-  ],
-  "links": {
-    "self": {
-      "href": "https://api.example.org/v3/isolation_segments/bdeg4371-cbd3-4155-b156-dc0c2a431b4c/relationships/organizations"
-    },
-    "related": {
-      "href": "https://api.example.org/v3/isolation_segments/bdeg4371-cbd3-4155-b156-dc0c2a431b4c/organizations"
-    }
-  }
-}
-<% end %>
+<% content_for :relationships_organizations, File.read(__dir__ + '/examples/isolation_segments/relationships_organizations.json') %>
 
-<% content_for :relationships_spaces do %>
-{
-  "data": [
-    {
-      "guid": "885735b5-aea4-4cf5-8e44-961af0e41920"
-    },
-    {
-      "guid": "d4c91047-7b29-4fda-b7f9-04033e5c9c9f"
-    }
-  ],
-  "links": {
-    "self": {
-      "href": "https://api.example.org/v3/isolation_segments/bdeg4371-cbd3-4155-b156-dc0c2a431b4c/relationships/spaces"
-    }
-  }
-}
-<% end %>
+<% content_for :relationships_spaces, File.read(__dir__ + '/examples/isolation_segments/relationships_spaces.json') %>
