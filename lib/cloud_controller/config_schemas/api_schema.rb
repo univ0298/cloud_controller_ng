@@ -366,7 +366,6 @@ module VCAP::CloudController
               registry_tag_base: String,
             }
           },
-
           **VCAP::Config::Dsl.omit_on_k8s(
             cc_service_key_client_name: String,
             cc_service_key_client_secret: String,
@@ -394,7 +393,7 @@ module VCAP::CloudController
               enable_declarative_asset_downloads: bool,
             },
           ),
-
+          optional(:honeycomb_api_key) => String
         }
       end
       # rubocop:enable Metrics/BlockLength
