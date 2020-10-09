@@ -1,7 +1,7 @@
 require 'honeycomb-beeline'
 
 module CCInitializers
-  def self.honeycomb_instrumentation(_)
+  def self.honeycomb(_)
     logger.info('Running honeycomb initializer')
     Honeycomb.configure do |hc|
       hc.write_key = config.get(:honeycomb_write_key)
