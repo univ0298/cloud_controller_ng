@@ -202,9 +202,6 @@ module VCAP::CloudController
         run_initializers_in_directory('../../../config/newrelic/initializers/*.rb')
       end
 
-      if @config_hash[:honeycomb_write_Key]
-        run_initializers_in_directory('../../../config/honeycomb/initializers/*.rb')
-      end
       @initialized = true
     end
 
