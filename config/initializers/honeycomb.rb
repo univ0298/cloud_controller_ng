@@ -1,11 +1,10 @@
 require 'honeycomb-beeline'
 
 module CCInitializers
-  def self.honeycomb(_)
-    logger.info('Running honeycomb initializer')
+  def self.honeycomb(cc_config)
     Honeycomb.configure do |hc|
-      hc.write_key = config.get(:honeycomb_write_key)
-      logger.info(config.get(:honeycomb_write_key))
+      hc.write_key = cc_config[:honeycomb_api_key]
+
       hc.dataset = 'rails'
       hc.presend_hook do |fields|
         if fields['name'] == 'redis' && fields.key?('redis.command')
