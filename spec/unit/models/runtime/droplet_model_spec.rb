@@ -181,6 +181,21 @@ module VCAP::CloudController
       end
     end
 
+    describe '#docker_user' do
+      let!(:droplet_model) { DropletModel.make(:docker) }
+
+      before do
+        execution_metadata = {
+            'user' => 2000
+        }
+        droplet_model.execution_metadata = execution_metadata.to_json
+        droplet_model.save
+      end
+      it 'saves the docker_user attribute from execution_metadata ' do
+        expect(droplet_model.docker_user).to equal(2000)
+      end
+    end
+
     describe '#set_buildpack_receipt' do
       let!(:droplet_model) { DropletModel.make(state: 'STAGED') }
 
