@@ -19,10 +19,22 @@ module VCAP
     end
 
     class << self
-      attr_reader :schema
+      attr_reader :schema_block
 
       def define_schema(&blk)
-        @schema = Membrane::SchemaParser.parse(&blk)
+        @schema_block = blk
+      end
+
+      def schema(config_hash)
+        Membrane::SchemaParser::Dsl.define_method :omit_on_k8s do |**schema_section|
+          return {} if config_hash.key?(:kubernetes)
+
+          schema_section.each.with_object({}) do |(key, schema), result|
+            result[key] = schema
+          end
+        end
+
+        Membrane::SchemaParser.parse(&schema_block)
       end
 
       def from_file(filename, secrets_hash: {})
@@ -31,7 +43,7 @@ module VCAP
         secrets_hash = deep_symbolize_keys_except_in_arrays(secrets_hash)
 
         config = config.deep_merge(secrets_hash)
-        @schema.validate(config)
+        schema(config).validate(config)
 
         config
       end

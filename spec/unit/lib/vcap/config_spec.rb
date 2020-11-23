@@ -10,9 +10,10 @@ RSpec.describe VCAP::Config do
         end
       end
 
-      expect(MyConfig.schema).to be_instance_of(Membrane::Schemas::List)
-      expect(MyConfig.schema.elem_schema).to be_instance_of(Membrane::Schemas::Class)
-      expect(MyConfig.schema.elem_schema.klass).to eq(Integer)
+      schema = MyConfig.schema([])
+      expect(schema).to be_instance_of(Membrane::Schemas::List)
+      expect(schema.elem_schema).to be_instance_of(Membrane::Schemas::Class)
+      expect(schema.elem_schema.klass).to eq(Integer)
     end
   end
 

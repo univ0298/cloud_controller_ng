@@ -84,7 +84,7 @@ module VCAP::CloudController
           },
           staging: {
             timeout_in_seconds: Integer,
-            **VCAP::Config::Dsl.omit_on_k8s(
+            **omit_on_k8s(
               auth: {
                 user: String,
                 password: String,
@@ -156,7 +156,7 @@ module VCAP::CloudController
           max_annotations_per_resource: Integer,
           custom_metric_tag_prefix_list: Array,
 
-          **VCAP::Config::Dsl.omit_on_k8s(
+          **omit_on_k8s(
             diego: {
               bbs: {
                 url: String,

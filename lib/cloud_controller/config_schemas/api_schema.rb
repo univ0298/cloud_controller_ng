@@ -97,7 +97,7 @@ module VCAP::CloudController
             minimum_staging_disk_mb: Integer,
             minimum_staging_file_descriptor_limit: Integer,
 
-            **VCAP::Config::Dsl.omit_on_k8s(
+            **omit_on_k8s(
               auth: {
                 user: String,
                 password: String,
@@ -362,7 +362,7 @@ module VCAP::CloudController
             }
           },
 
-          **VCAP::Config::Dsl.omit_on_k8s(
+          **omit_on_k8s(
             cc_service_key_client_name: String,
             cc_service_key_client_secret: String,
 
