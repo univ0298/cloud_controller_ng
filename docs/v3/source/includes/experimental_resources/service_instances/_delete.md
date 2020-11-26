@@ -28,9 +28,11 @@ Content-Type: application/json
 Location: https://api.example.org/v3/jobs/af5c57f6-8769-41fa-a499-2c84ed896788
 ```
 
-This endpoint deletes a service instance. User provided service instances do not require interactions with
-service brokers, therefore the API will respond synchronously to the delete request. For managed service instances, 
-the API will respond asynchronously. 
+This endpoint deletes a service instance, including any associated service bindings,
+route bindings, service keys, and shared service instances.
+User-provided service instances do not require interaction with a
+service broker, therefore the API will respond synchronously to the delete request.
+For managed service instances, the API will respond asynchronously.
 
 If failures occur while deleting managed service instances, the API might execute orphan mitigation steps
 accordingly to cases outlined in the [OSBAPI specification](https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#orphan-mitigation)

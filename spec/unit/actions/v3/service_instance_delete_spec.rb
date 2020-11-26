@@ -68,42 +68,56 @@ module VCAP
           end
         end
 
-        describe 'invalid pre-conditions' do
-          let!(:service_instance) { VCAP::CloudController::UserProvidedServiceInstance.make(route_service_url: 'https://bar.com') }
+        describe 'recursion' do
+          before do
+            allow_any_instance_of(Repositories::ServiceGenericBindingEventRepository).to receive(:record_delete)
+          end
 
           context 'when there are associated service bindings' do
+            let!(:service_instance) { UserProvidedServiceInstance.make(route_service_url: 'https://bar.com') }
+            let!(:binding) { ServiceBinding.make(service_instance: service_instance) }
+
             before do
-              VCAP::CloudController::ServiceBinding.make(service_instance: service_instance)
+              subject.delete(service_instance)
             end
 
-            it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
-              expect { service_instance.reload }.not_to raise_error
+            it 'deletes the service bindings too' do
+              expect(ServiceBinding.all).to be_empty
+              expect(ServiceInstance.all).to be_empty
             end
           end
 
+          # TODO: technically a user-provided instance cannot have a key
           context 'when there are associated service keys' do
+            let!(:service_instance) { UserProvidedServiceInstance.make(route_service_url: 'https://bar.com') }
+            let!(:key) { VCAP::CloudController::ServiceKey.make(service_instance: service_instance) }
+
             before do
-              VCAP::CloudController::ServiceKey.make(service_instance: service_instance)
+              subject.delete(service_instance)
             end
 
-            it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
-              expect { service_instance.reload }.not_to raise_error
+            it 'deletes the service keys too' do
+              expect(ServiceBinding.all).to be_empty
+              expect(ServiceInstance.all).to be_empty
             end
           end
 
           context 'when there are associated route bindings' do
-            before do
+            let!(:service_instance) { UserProvidedServiceInstance.make(route_service_url: 'https://bar.com') }
+            let!(:route_binding) do
               VCAP::CloudController::RouteBinding.make(
                 service_instance: service_instance,
                 route: VCAP::CloudController::Route.make(space: service_instance.space)
               )
             end
 
-            it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
-              expect { service_instance.reload }.not_to raise_error
+            before do
+              subject.delete(service_instance)
+            end
+
+            it 'deletes the route bindings too' do
+              expect(RouteBinding.all).to be_empty
+              expect(ServiceInstance.all).to be_empty
             end
           end
 
@@ -111,14 +125,20 @@ module VCAP
             let(:space) { VCAP::CloudController::Space.make }
             let(:other_space) { VCAP::CloudController::Space.make }
             let!(:service_instance) {
-              si = VCAP::CloudController::ServiceInstance.make(space: space)
+              # TODO: technically a user-provided instance cannot be shared, but the test is simpler this way
+              si = VCAP::CloudController::UserProvidedServiceInstance.make(space: space)
               si.shared_space_ids = [other_space.id]
               si
             }
 
-            it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::InstanceSharedError)
-              expect { service_instance.reload }.not_to raise_error
+            before do
+              allow(Repositories::ServiceInstanceShareEventRepository).to receive(:record_unshare_event)
+
+              subject.delete(service_instance)
+            end
+
+            it 'deletes the service instance' do
+              expect(ServiceInstance.all).to be_empty
             end
           end
         end

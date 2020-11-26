@@ -20,10 +20,6 @@ module VCAP::CloudController
         )
       end
 
-      it 'says the the delete is complete' do
-        expect(perform_action[:finished]).to be_truthy
-      end
-
       context 'route does not have app' do
         it 'does not notify diego' do
           perform_action
@@ -87,6 +83,10 @@ module VCAP::CloudController
             end
 
             it_behaves_like 'successful route binding delete'
+
+            it 'says the the delete is complete' do
+              expect(perform_action[:finished]).to be_truthy
+            end
           end
 
           context 'async unbinding' do
@@ -114,6 +114,10 @@ module VCAP::CloudController
           let(:perform_action) { action.delete(binding) }
 
           it_behaves_like 'successful route binding delete'
+
+          it 'says the the delete is complete' do
+            expect(perform_action[:finished]).to be_truthy
+          end
         end
       end
 
@@ -153,6 +157,10 @@ module VCAP::CloudController
           let(:perform_action) { poll_binding }
 
           it_behaves_like 'successful route binding delete'
+
+          it 'says the the delete is complete' do
+            expect(perform_action[:finished]).to be_truthy
+          end
         end
 
         context 'last operation state is in progress' do
@@ -189,6 +197,47 @@ module VCAP::CloudController
             expect(messenger).not_to have_received(:send_desire_request)
             expect(binding_event_repo).not_to have_received(:record_delete)
           end
+        end
+      end
+
+      describe '#quick_delete' do
+        let(:perform_action) { action.quick_delete(binding) }
+
+        context 'managed service instance' do
+          let(:service_offering) { Service.make(requires: ['route_forwarding']) }
+          let(:service_plan) { ServicePlan.make(service: service_offering) }
+          let(:service_instance) { ManagedServiceInstance.make(space: space, service_plan: service_plan) }
+
+          it_behaves_like 'service binding deletion', RouteBinding
+
+          context 'broker returns delete complete' do
+            let(:unbind_response) { { async: false } }
+            let(:broker_client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client, unbind: unbind_response) }
+
+            before do
+              allow(VCAP::Services::ServiceBrokers::V2::Client).to receive(:new).and_return(broker_client)
+            end
+
+            it_behaves_like 'successful route binding delete'
+          end
+
+          context 'async unbinding' do
+            let(:broker_provided_operation) { Sham.guid }
+            let(:async_unbind_response) { { async: true, operation: broker_provided_operation } }
+            let(:broker_client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client, unbind: async_unbind_response) }
+
+            before do
+              allow(VCAP::Services::ServiceBrokers::V2::Client).to receive(:new).and_return(broker_client)
+            end
+
+            it_behaves_like 'successful route binding delete'
+          end
+        end
+
+        context 'user-provided service instance' do
+          let(:service_instance) { UserProvidedServiceInstance.make(space: space, route_service_url: route_service_url) }
+
+          it_behaves_like 'successful route binding delete'
         end
       end
     end

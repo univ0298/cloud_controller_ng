@@ -16,6 +16,11 @@ module VCAP::CloudController
       PollingFinished = PollingStatus.new(true, nil).freeze
       ContinuePolling = ->(retry_after) { PollingStatus.new(false, retry_after) }
 
+      def quick_delete(binding)
+        send_unbind_to_client(binding)
+        perform_delete_actions(binding)
+      end
+
       def delete(binding)
         result = send_unbind_to_client(binding)
         if result[:finished]

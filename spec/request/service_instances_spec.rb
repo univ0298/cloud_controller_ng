@@ -2576,9 +2576,12 @@ RSpec.describe 'V3 service instances' do
         VCAP::CloudController::ServiceInstanceLabelModel.make(key_name: 'fruit', value: 'avocado', service_instance: instance)
         VCAP::CloudController::ServiceInstanceAnnotationModel.make(key_name: 'contact', value: 'marie', service_instance: instance)
         VCAP::CloudController::ServiceInstanceAnnotationModel.make(key_name: 'email', value: 'some@example.com', service_instance: instance)
+
+        VCAP::CloudController::ServiceBinding.make(service_instance: instance)
+        VCAP::CloudController::RouteBinding.make(service_instance: instance)
       end
 
-      it 'deletes the instance and removes any labels or annotations' do
+      it 'deletes the instance and removes any labels, annotations or bindings' do
         api_call.call(admin_headers)
         expect(last_response).to have_status_code(204)
 
@@ -2586,12 +2589,8 @@ RSpec.describe 'V3 service instances' do
         expect(last_response.status).to eq(404)
         expect(VCAP::CloudController::ServiceInstanceLabelModel.where(service_instance: instance).all).to be_empty
         expect(VCAP::CloudController::ServiceInstanceAnnotationModel.where(service_instance: instance).all).to be_empty
-      end
-
-      it 'fails to delete when there are bindings' do
-        VCAP::CloudController::ServiceBinding.make(service_instance: instance)
-        api_call.call(admin_headers)
-        expect(last_response).to have_status_code(422)
+        expect(VCAP::CloudController::ServiceBinding.where(service_instance: instance).all).to be_empty
+        expect(VCAP::CloudController::RouteBinding.where(service_instance: instance).all).to be_empty
       end
 
       context 'with purge' do
@@ -3068,51 +3067,10 @@ RSpec.describe 'V3 service instances' do
         end
       end
 
-      context 'when it is shared' do
-        let(:other_space) { VCAP::CloudController::Space.make }
-
-        before do
-          share_service_instance(instance, other_space)
-        end
-
-        it 'returns a 422 Unprocessable Entity' do
-          api_call.call(admin_headers)
-          expect(last_response).to have_status_code(422)
-          response = parsed_response['errors'].first
-          expect(response).to include('title' => 'CF-ServiceInstanceDeletionSharesExists')
-          expect(response).to include('detail' => include('Service instances must be unshared before they can be deleted.'))
-        end
-      end
-
       context 'when there are associations' do
-        RSpec.shared_examples 'associations not empty' do
-          it 'returns a 422 Unprocessable Entity' do
-            api_call.call(admin_headers)
-            expect(last_response).to have_status_code(422)
-            response = parsed_response['errors'].first
-            expect(response).to include('title' => 'CF-AssociationNotEmpty')
-            expect(response).to include('detail' => include('Please delete the service_bindings, service_keys, and routes associations for your service_instances.'))
-          end
-        end
-
         let(:service_offering) { VCAP::CloudController::Service.make(requires: %w(route_forwarding)) }
         let(:service_plan) { VCAP::CloudController::ServicePlan.make(service: service_offering) }
         let(:instance) { VCAP::CloudController::ManagedServiceInstance.make(space: space, service_plan: service_plan) }
-
-        describe 'service bindings' do
-          before(:each) { VCAP::CloudController::ServiceBinding.make(service_instance: instance) }
-          it_should_behave_like 'associations not empty'
-        end
-
-        describe 'service keys' do
-          before(:each) { VCAP::CloudController::ServiceKey.make(service_instance: instance) }
-          it_should_behave_like 'associations not empty'
-        end
-
-        describe 'route bindings' do
-          before(:each) { VCAP::CloudController::RouteBinding.make(service_instance: instance) }
-          it_should_behave_like 'associations not empty'
-        end
 
         context 'but purge is true' do
           let(:query_params) { 'purge=true' }

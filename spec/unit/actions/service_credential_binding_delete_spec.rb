@@ -164,6 +164,60 @@ module VCAP::CloudController
           end
         end
       end
+
+      RSpec.shared_examples 'successful credential binding quick delete' do
+        it 'deletes the binding' do
+          action.quick_delete(binding)
+
+          expect(ServiceBinding.all).to be_empty
+        end
+
+        it 'creates an audit event' do
+          action.quick_delete(binding)
+
+          expect(binding_event_repo).to have_received(:record_delete).with(
+            binding,
+            user_audit_info,
+          )
+        end
+      end
+
+      describe '#quick_delete' do
+        context 'managed service instance' do
+          let(:service_instance) { ManagedServiceInstance.make(space: space) }
+
+          it_behaves_like 'service binding deletion', ServiceBinding
+
+          context 'broker returns delete complete' do
+            let(:unbind_response) { { async: false } }
+            let(:broker_client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client, unbind: unbind_response) }
+
+            before do
+              allow(VCAP::Services::ServiceBrokers::V2::Client).to receive(:new).and_return(broker_client)
+            end
+
+            it_behaves_like 'successful credential binding quick delete'
+          end
+
+          context 'async unbinding' do
+            let(:broker_provided_operation) { Sham.guid }
+            let(:async_unbind_response) { { async: true, operation: broker_provided_operation } }
+            let(:broker_client) { instance_double(VCAP::Services::ServiceBrokers::V2::Client, unbind: async_unbind_response) }
+
+            before do
+              allow(VCAP::Services::ServiceBrokers::V2::Client).to receive(:new).and_return(broker_client)
+            end
+
+            it_behaves_like 'successful credential binding quick delete'
+          end
+        end
+
+        context 'user-provided service instance' do
+          let(:service_instance) { UserProvidedServiceInstance.make(space: space) }
+
+          it_behaves_like 'successful credential binding quick delete'
+        end
+      end
     end
   end
 end
