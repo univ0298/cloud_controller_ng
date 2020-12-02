@@ -28,6 +28,11 @@ module VCAP::CloudController
         end
       end
 
+
+      def poll(service_instance)
+
+      end
+
       private
 
       def synchronous_destroy(service_instance, lock)
