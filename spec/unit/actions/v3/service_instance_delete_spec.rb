@@ -10,6 +10,7 @@ module VCAP
         let(:event_repository) do
           dbl = double(Repositories::ServiceEventRepository::WithUserActor)
           allow(dbl).to receive(:record_user_provided_service_instance_event)
+          allow(dbl).to receive(:record_service_instance_event)
           allow(dbl).to receive(:user_audit_info)
           dbl
         end
@@ -19,8 +20,8 @@ module VCAP
             si = VCAP::CloudController::UserProvidedServiceInstance.make(
               name: 'foo',
               credentials: {
-                  foo: 'bar',
-                  baz: 'qux'
+                foo: 'bar',
+                baz: 'qux'
               },
               syslog_drain_url: 'https://foo.com',
               route_service_url: 'https://bar.com',
@@ -40,11 +41,7 @@ module VCAP
           it 'deletes it from the database' do
             subject.delete(service_instance)
 
-            expect {
-              service_instance.reload
-            }.to raise_error(Sequel::Error, 'Record not found')
-            expect(VCAP::CloudController::ServiceInstanceLabelModel.where(service_instance: service_instance)).to be_empty
-            expect(VCAP::CloudController::ServiceInstanceAnnotationModel.where(service_instance: service_instance)).to be_empty
+            expect(ServiceInstance.all).to be_empty
           end
 
           it 'creates an audit event' do
@@ -52,20 +49,106 @@ module VCAP
 
             expect(event_repository).
               to have_received(:record_user_provided_service_instance_event).
-              with(:delete, instance_of(UserProvidedServiceInstance))
+                with(:delete, instance_of(UserProvidedServiceInstance))
           end
 
-          it 'returns true' do
-            expect(subject.delete(service_instance)).to be_truthy
+          it 'returns finished' do
+            result = subject.delete(service_instance)
+            expect(result[:finished]).to be_truthy
           end
         end
 
         context 'managed service instances' do
+          let(:deprovision_response) do
+            {
+              last_operation: {
+                type: 'delete',
+                state: 'succeeded',
+              }
+            }
+          end
+          let(:client) do
+            instance_double(VCAP::Services::ServiceBrokers::V2::Client, {
+              deprovision: deprovision_response,
+            })
+          end
           let!(:service_instance) { VCAP::CloudController::ManagedServiceInstance.make }
 
-          it 'returns false' do
-            expect(subject.delete(service_instance)).to be_falsey
+          before do
+            allow(VCAP::Services::ServiceClientProvider).to receive(:provide).and_return(client)
           end
+
+          it 'sends a deprovision to the client' do
+            action.delete(service_instance)
+
+            expect(client).to have_received(:deprovision).with(service_instance, accepts_incomplete: true)
+          end
+
+          context 'when the client succeeds synchronously' do
+            it 'deletes it from the database' do
+              subject.delete(service_instance)
+
+              expect(ServiceInstance.all).to be_empty
+            end
+
+            it 'creates an audit event' do
+              subject.delete(service_instance)
+
+              expect(event_repository).
+                to have_received(:record_service_instance_event).
+                  with(:delete, instance_of(ManagedServiceInstance))
+            end
+
+            it 'returns finished' do
+              result = subject.delete(service_instance)
+              expect(result[:finished]).to be_truthy
+            end
+          end
+
+          context 'when the client responds asynchronously' do
+            let(:operation) { Sham.guid }
+            let(:deprovision_response) do
+              {
+                last_operation: {
+                  type: 'delete',
+                  state: 'in progress',
+                  broker_provided_operation: operation,
+                }
+              }
+            end
+
+            it 'updates the last operation' do
+              subject.delete(service_instance)
+
+              expect(ServiceInstance.first.last_operation.type).to eq('delete')
+              expect(ServiceInstance.first.last_operation.state).to eq('in progress')
+              expect(ServiceInstance.first.last_operation.broker_provided_operation).to eq(operation)
+            end
+
+            it 'creates an audit event' do
+              subject.delete(service_instance)
+
+              expect(event_repository).
+                to have_received(:record_service_instance_event).
+                  with(:start_delete, instance_of(ManagedServiceInstance))
+            end
+
+            it 'returns incomplete' do
+              result = subject.delete(service_instance)
+              expect(result[:finished]).to be_falsey
+              expect(result[:operation]).to eq(operation)
+            end
+          end
+
+          context 'when an operation is already in progress'
+          # it 'update the last operation' do
+          #
+          # end
+          #
+          # it 'returns unfinished' do
+          #   result = subject.delete(service_instance)
+          #   expect(result[:finished]).to be_falsey
+          # end
         end
 
         describe 'invalid pre-conditions' do
@@ -77,7 +160,7 @@ module VCAP
             end
 
             it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
+              expect { subject.delete_checks(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
               expect { service_instance.reload }.not_to raise_error
             end
           end
@@ -88,7 +171,7 @@ module VCAP
             end
 
             it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
+              expect { subject.delete_checks(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
               expect { service_instance.reload }.not_to raise_error
             end
           end
@@ -102,7 +185,7 @@ module VCAP
             end
 
             it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
+              expect { subject.delete_checks(service_instance) }.to raise_error(V3::ServiceInstanceDelete::AssociationNotEmptyError)
               expect { service_instance.reload }.not_to raise_error
             end
           end
@@ -117,7 +200,7 @@ module VCAP
             }
 
             it 'does not delete the service instance' do
-              expect { subject.delete(service_instance) }.to raise_error(V3::ServiceInstanceDelete::InstanceSharedError)
+              expect { subject.delete_checks(service_instance) }.to raise_error(V3::ServiceInstanceDelete::InstanceSharedError)
               expect { service_instance.reload }.not_to raise_error
             end
           end
