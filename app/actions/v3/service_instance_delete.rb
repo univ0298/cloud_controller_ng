@@ -5,10 +5,10 @@ require 'cloud_controller/errors/api_error'
 module VCAP::CloudController
   module V3
     class ServiceInstanceDelete
-      class AssociationNotEmptyError < StandardError;
+      class AssociationNotEmptyError < StandardError
       end
 
-      class InstanceSharedError < StandardError;
+      class InstanceSharedError < StandardError
       end
 
       DeleteStatus = Struct.new(:finished, :operation).freeze
@@ -18,7 +18,6 @@ module VCAP::CloudController
       PollingStatus = Struct.new(:finished, :retry_after).freeze
       PollingFinished = PollingStatus.new(true, nil).freeze
       ContinuePolling = ->(retry_after) { PollingStatus.new(false, retry_after) }
-
 
       def initialize(event_repo)
         @service_event_repository = event_repo
@@ -45,10 +44,7 @@ module VCAP::CloudController
         cannot_delete_shared_instances! if service_instance.shared?
       end
 
-
-      def poll(service_instance)
-
-      end
+      def poll(service_instance); end
 
       private
 
@@ -56,6 +52,7 @@ module VCAP::CloudController
         client = VCAP::Services::ServiceClientProvider.provide(service_instance)
         result = client.deprovision(service_instance, accepts_incomplete: true)
         return DeleteComplete if result[:last_operation][:state] == 'succeeded'
+
         DeleteStarted.call(result[:last_operation][:broker_provided_operation])
       end
 

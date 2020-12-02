@@ -64,7 +64,7 @@ module VCAP::CloudController
 
             expect(event_repository).
               to have_received(:record_user_provided_service_instance_event).
-                with(:delete, instance_of(UserProvidedServiceInstance))
+              with(:delete, instance_of(UserProvidedServiceInstance))
           end
 
           it 'returns finished' do
@@ -106,7 +106,7 @@ module VCAP::CloudController
 
               expect(event_repository).
                 to have_received(:record_service_instance_event).
-                  with(:delete, instance_of(ManagedServiceInstance))
+                with(:delete, instance_of(ManagedServiceInstance))
             end
 
             it 'returns finished' do
@@ -140,7 +140,7 @@ module VCAP::CloudController
 
               expect(event_repository).
                 to have_received(:record_service_instance_event).
-                  with(:start_delete, instance_of(ManagedServiceInstance))
+                with(:start_delete, instance_of(ManagedServiceInstance))
             end
 
             it 'returns incomplete' do
@@ -152,7 +152,7 @@ module VCAP::CloudController
 
           context 'when an update operation is already in progress' do
             before do
-              service_instance.save_with_new_operation({}, {type: 'update', state: 'in progress'})
+              service_instance.save_with_new_operation({}, { type: 'update', state: 'in progress' })
             end
 
             it 'should raise' do
@@ -164,7 +164,7 @@ module VCAP::CloudController
 
           context 'when a create operation is already in progress' do
             before do
-              service_instance.save_with_new_operation({}, {type: 'create', state: 'in progress'})
+              service_instance.save_with_new_operation({}, { type: 'create', state: 'in progress' })
             end
 
             it 'should delete the service instance' do
@@ -176,7 +176,7 @@ module VCAP::CloudController
 
           context 'when a delete operation is already in progress' do
             before do
-              service_instance.save_with_new_operation({}, {type: 'delete', state: 'in progress'})
+              service_instance.save_with_new_operation({}, { type: 'delete', state: 'in progress' })
             end
 
             it 'should raise' do

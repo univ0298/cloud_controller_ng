@@ -3,10 +3,8 @@ require 'services/service_brokers/v2/errors/service_broker_bad_response'
 
 module VCAP::CloudController
   module V3
-
     class DeprovisionBadResponse < StandardError
     end
-
 
     class DeleteServiceInstanceJob < VCAP::CloudController::Jobs::ReoccurringJob
       attr_reader :resource_guid
@@ -19,6 +17,7 @@ module VCAP::CloudController
 
       def perform
         return finish unless service_instance
+
         self.maximum_duration_seconds = service_instance.service_plan.try(:maximum_polling_duration)
 
         unless delete_in_progress?
@@ -28,6 +27,7 @@ module VCAP::CloudController
 
         result = action.poll(service_instance)
         return finish if result[:finished]
+
         self.polling_interval_seconds = result[:retry_after].to_i if result[:retry_after]
       rescue CloudController::Errors::ApiError => err
         raise err
@@ -106,7 +106,6 @@ module VCAP::CloudController
       def action
         ServiceInstanceDelete.new(user_audit_info)
       end
-
 
       # def operation_succeeded
       #   ServiceInstance.db.transaction do
