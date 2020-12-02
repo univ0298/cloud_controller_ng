@@ -29,6 +29,8 @@ module VCAP::CloudController
         result = action.poll(service_instance)
         return finish if result[:finished]
         self.polling_interval_seconds = result[:retry_after].to_i if result[:retry_after]
+      rescue CloudController::Errors::ApiError => err
+        raise err
       rescue => err
         raise CloudController::Errors::ApiError.new_from_details('UnableToPerform', operation_type, err.message)
       end

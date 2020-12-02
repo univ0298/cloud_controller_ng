@@ -1,18 +1,21 @@
-require 'spec_helper'
+require 'db_spec_helper'
 require 'actions/v3/service_instance_delete'
 
-module VCAP
-  module CloudController
-    RSpec.describe V3::ServiceInstanceDelete do
-      describe '#delete' do
-        subject(:action) { described_class.new(event_repository) }
+module VCAP::CloudController
+  module V3
+    RSpec.describe ServiceInstanceDelete do
+      subject(:action) { described_class.new(event_repository) }
+      let(:event_repository) do
+        dbl = double(Repositories::ServiceEventRepository::WithUserActor)
+        allow(dbl).to receive(:record_user_provided_service_instance_event)
+        allow(dbl).to receive(:record_service_instance_event)
+        allow(dbl).to receive(:user_audit_info)
+        dbl
+      end
 
-        let(:event_repository) do
-          dbl = double(Repositories::ServiceEventRepository::WithUserActor)
-          allow(dbl).to receive(:record_user_provided_service_instance_event)
-          allow(dbl).to receive(:record_service_instance_event)
-          allow(dbl).to receive(:user_audit_info)
-          dbl
+      describe '#delete' do
+        before do
+          allow(VCAP::Services::ServiceClientProvider).to receive(:provide).and_return(client)
         end
 
         context 'user-provided service instances' do
@@ -37,6 +40,18 @@ module VCAP
             ]
             si
           end
+          let(:deprovision_response) do
+            {
+              last_operation: {
+                state: 'succeeded',
+              }
+            }
+          end
+          let(:client) do
+            instance_double(VCAP::Services::ServiceBrokers::UserProvided::Client, {
+              deprovision: deprovision_response,
+            })
+          end
 
           it 'deletes it from the database' do
             subject.delete(service_instance)
@@ -59,6 +74,7 @@ module VCAP
         end
 
         context 'managed service instances' do
+          let!(:service_instance) { VCAP::CloudController::ManagedServiceInstance.make }
           let(:deprovision_response) do
             {
               last_operation: {
@@ -72,12 +88,6 @@ module VCAP
               deprovision: deprovision_response,
             })
           end
-          let!(:service_instance) { VCAP::CloudController::ManagedServiceInstance.make }
-
-          before do
-            allow(VCAP::Services::ServiceClientProvider).to receive(:provide).and_return(client)
-          end
-
           it 'sends a deprovision to the client' do
             action.delete(service_instance)
 
@@ -140,17 +150,45 @@ module VCAP
             end
           end
 
-          context 'when an operation is already in progress'
-          # it 'update the last operation' do
-          #
-          # end
-          #
-          # it 'returns unfinished' do
-          #   result = subject.delete(service_instance)
-          #   expect(result[:finished]).to be_falsey
-          # end
-        end
+          context 'when an update operation is already in progress' do
+            before do
+              service_instance.save_with_new_operation({}, {type: 'update', state: 'in progress'})
+            end
 
+            it 'should raise' do
+              expect {
+                action.delete(service_instance)
+              }.to raise_error(CloudController::Errors::ApiError, "An operation for service instance #{service_instance.name} is in progress.")
+            end
+          end
+
+          context 'when a create operation is already in progress' do
+            before do
+              service_instance.save_with_new_operation({}, {type: 'create', state: 'in progress'})
+            end
+
+            it 'should delete the service instance' do
+              action.delete(service_instance)
+
+              expect(ServiceInstance.all).to be_empty
+            end
+          end
+
+          context 'when a delete operation is already in progress' do
+            before do
+              service_instance.save_with_new_operation({}, {type: 'delete', state: 'in progress'})
+            end
+
+            it 'should raise' do
+              expect {
+                action.delete(service_instance)
+              }.to raise_error(CloudController::Errors::ApiError, "An operation for service instance #{service_instance.name} is in progress.")
+            end
+          end
+        end
+      end
+
+      describe '#delete_checks' do
         describe 'invalid pre-conditions' do
           let!(:service_instance) { VCAP::CloudController::UserProvidedServiceInstance.make(route_service_url: 'https://bar.com') }
 
