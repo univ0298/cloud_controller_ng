@@ -62,6 +62,10 @@ module VCAP::CloudController
         'service_instance'
       end
 
+      def display_name
+        "#{resource_type}.#{operation_type}"
+      end
+
       # def gone!
       #   finish
       # end
@@ -104,7 +108,7 @@ module VCAP::CloudController
       end
 
       def action
-        ServiceInstanceDelete.new(user_audit_info)
+        ServiceInstanceDelete.new(Repositories::ServiceEventRepository.new(user_audit_info))
       end
 
       # def operation_succeeded

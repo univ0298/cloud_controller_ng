@@ -2638,7 +2638,7 @@ RSpec.describe 'V3 service instances' do
         expect(job.state).to eq(VCAP::CloudController::PollableJobModel::PROCESSING_STATE)
         expect(job.operation).to eq('service_instance.delete')
         expect(job.resource_guid).to eq(instance.guid)
-        expect(job.resource_type).to eq('service_instances')
+        expect(job.resource_type).to eq('service_instance')
       end
 
       describe 'the pollable job' do

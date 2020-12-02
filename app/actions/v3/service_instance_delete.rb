@@ -37,6 +37,8 @@ module VCAP::CloudController
         end
 
         result
+      ensure
+        lock.unlock_and_fail! if lock.needs_unlock?
       end
 
       def delete_checks(service_instance)
@@ -49,7 +51,7 @@ module VCAP::CloudController
       private
 
       def send_deprovison_to_broker(service_instance)
-        client = VCAP::Services::ServiceClientProvider.provide(service_instance)
+        client = VCAP::Services::ServiceClientProvider.provide(instance: service_instance)
         result = client.deprovision(service_instance, accepts_incomplete: true)
         return DeleteComplete if result[:last_operation][:state] == 'succeeded'
 

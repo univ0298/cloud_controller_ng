@@ -364,7 +364,7 @@ module VCAP::CloudController
       end
 
       describe '#resource_type' do
-        it 'returns "service_instance"' do
+        it 'returns "service_instances"' do
           expect(job.resource_type).to eq('service_instance')
         end
       end
@@ -372,6 +372,12 @@ module VCAP::CloudController
       describe '#resource_guid' do
         it 'returns the service instance guid' do
           expect(job.resource_guid).to eq(service_instance.guid)
+        end
+      end
+
+      describe '#display_name' do
+        it 'returns the display name' do
+          expect(job.display_name).to eq('service_instance.delete')
         end
       end
 

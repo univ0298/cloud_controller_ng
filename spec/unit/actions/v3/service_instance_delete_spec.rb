@@ -53,6 +53,13 @@ module VCAP::CloudController
             })
           end
 
+          it 'sends a deprovision to the client' do
+            action.delete(service_instance)
+
+            expect(VCAP::Services::ServiceClientProvider).to have_received(:provide).with(instance: service_instance)
+            expect(client).to have_received(:deprovision).with(service_instance, accepts_incomplete: true)
+          end
+
           it 'deletes it from the database' do
             subject.delete(service_instance)
 
@@ -83,14 +90,17 @@ module VCAP::CloudController
               }
             }
           end
+
           let(:client) do
             instance_double(VCAP::Services::ServiceBrokers::V2::Client, {
               deprovision: deprovision_response,
             })
           end
+
           it 'sends a deprovision to the client' do
             action.delete(service_instance)
 
+            expect(VCAP::Services::ServiceClientProvider).to have_received(:provide).with(instance: service_instance)
             expect(client).to have_received(:deprovision).with(service_instance, accepts_incomplete: true)
           end
 
@@ -163,15 +173,35 @@ module VCAP::CloudController
           end
 
           context 'when a create operation is already in progress' do
+            let(:create_operation) {Sham.guid}
             before do
-              service_instance.save_with_new_operation({}, { type: 'create', state: 'in progress' })
+              service_instance.save_with_new_operation({}, { type: 'create', state: 'in progress' , broker_provided_operation: create_operation})
             end
 
-            it 'should delete the service instance' do
-              action.delete(service_instance)
+            context 'broker accepts delete request' do
+              it 'should delete the service instance' do
+                action.delete(service_instance)
 
-              expect(ServiceInstance.all).to be_empty
+                expect(ServiceInstance.all).to be_empty
+              end
             end
+
+            context 'broker rejects delete request' do
+              before do
+                allow(client).to receive(:deprovision).and_raise(CloudController::Errors::ApiError.new_from_details('AsyncServiceInstanceOperationInProgress', service_instance.name))
+              end
+
+              it 'should leave create in progress' do
+                expect {
+                  action.delete(service_instance)
+                }.to raise_error(CloudController::Errors::ApiError, "An operation for service instance #{service_instance.name} is in progress.")
+
+                expect(ServiceInstance.first.last_operation.type).to eq('create')
+                expect(ServiceInstance.first.last_operation.state).to eq('in progress')
+                expect(ServiceInstance.first.last_operation.broker_provided_operation).to eq(create_operation)
+              end
+            end
+
           end
 
           context 'when a delete operation is already in progress' do
